@@ -8,10 +8,10 @@ As datas dependem do calendário da disciplina [PREENCHER: datas das entregas pa
 
 Objetivo: ambiente executável, autenticação e projetos.
 
-- [ ] Repositório, `.gitignore`, `.env.example` e convenção de *branches*
+- [ ] Repositório, monorepositório pnpm, `.gitignore`, `.env.example` e convenção de *branches*
 - [ ] Docker Compose com PostgreSQL, API, front-end e *proxy*
-- [ ] Entidades, `DbContext` e primeira *migration*
-- [ ] ASP.NET Core Identity com *cookie*, bloqueio por tentativas e CSRF (RF01, RF02, RNF01 a RNF05)
+- [ ] Esquema Drizzle e primeira *migration*
+- [ ] Autenticação: Argon2id, tabela de sessões, *cookie*, bloqueio por tentativas e *middleware* `csrf` (RF01, RF02, RNF01 a RNF05)
 - [ ] Cabeçalhos de segurança e tratamento de erros (RNF10, RNF11)
 - [ ] Criação do administrador inicial e gestão de usuários (RF03 a RF05)
 - [ ] CRUD de projetos com arquivamento (RF07 a RF10)
@@ -24,7 +24,7 @@ Objetivo: ciclo de vida completo do achado.
 - [ ] Entidade `Achado` com geração de código (RF12, RF13, RN02)
 - [ ] Catálogo OWASP e campo CWE (RF14)
 - [ ] Atribuição de responsável (RF15)
-- [ ] Máquina de estados e testes de todas as combinações da Tabela 6 do documento 03 (RF16, RF17, RNF20)
+- [ ] Máquina de estados e testes de todas as combinações da Tabela 7 do documento 03 (RF16, RF17, RNF20)
 - [ ] Histórico de eventos (RF20)
 - [ ] Listagem com filtros e paginação (RF18)
 - [ ] Telas: lista de achados, formulário, detalhe, diálogo de transição, histórico
@@ -52,7 +52,7 @@ Ordem de prioridade dos itens desejáveis, do mais ao menos relevante para a dem
 Verificação de segurança:
 
 - [ ] Testes da seção 5 do documento 05 registrados como achados
-- [ ] `dotnet list package --vulnerable`, `npm audit` e `gitleaks` sem pendências críticas
+- [ ] `pnpm audit` e `gitleaks` sem pendências críticas
 - [ ] Apresentação e vídeo de demonstração
 
 ## 2. Divisão sugerida do trabalho

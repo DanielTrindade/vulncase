@@ -96,14 +96,14 @@ A Tabela 1 resume as permissões por ação.
 
 | ID | Requisito | Prioridade |
 |---|---|:-:|
-| RNF01 | Senhas devem ser armazenadas apenas como *hash* com sal, usando o `PasswordHasher` do ASP.NET Core Identity (PBKDF2). | M |
+| RNF01 | Senhas devem ser armazenadas apenas como *hash* com sal, usando Argon2id (biblioteca `@node-rs/argon2`) com os parâmetros padrão da biblioteca. | M |
 | RNF02 | Senhas devem ter no mínimo 10 caracteres. | M |
 | RNF03 | Após 5 tentativas de entrada malsucedidas, a conta deve ser bloqueada por 15 minutos. | M |
-| RNF04 | A sessão deve usar *cookie* com os atributos `HttpOnly`, `Secure` e `SameSite=Strict` e expirar após 8 horas. | M |
-| RNF05 | Requisições que alteram estado devem exigir *token* antifalsificação (proteção contra CSRF). | M |
+| RNF04 | A sessão deve usar *cookie* com os atributos `HttpOnly`, `Secure` e `SameSite=Strict` e expirar após 8 horas. O *cookie* contém um *token* aleatório de 32 bytes; o banco guarda apenas o *hash* SHA-256 desse *token*. Um novo *token* é emitido a cada entrada, e as sessões do usuário são revogadas na troca de senha e na desativação. | M |
+| RNF05 | Requisições que alteram estado devem ter a origem verificada pelo *middleware* `csrf` do Hono, aceitando apenas a origem configurada da aplicação (proteção contra CSRF, em conjunto com `SameSite=Strict`). | M |
 | RNF06 | Toda autorização deve ser verificada no back-end, por papel e, quando aplicável, por propriedade do recurso (ex.: responsável pelo achado). A interface apenas oculta ações não permitidas. | M |
 | RNF07 | Toda entrada deve ser validada no back-end quanto a tipo, tamanho e valores permitidos. | M |
-| RNF08 | O acesso ao banco deve ocorrer apenas por consultas parametrizadas, via Entity Framework Core. Concatenação de SQL é proibida. | M |
+| RNF08 | O acesso ao banco deve ocorrer apenas por consultas parametrizadas, via Drizzle ORM. O uso de `sql.raw` e a concatenação de SQL são proibidos. | M |
 | RNF09 | Conteúdo textual cadastrado deve ser exibido como texto. O uso de `dangerouslySetInnerHTML` é proibido no front-end. | M |
 | RNF10 | Respostas HTTP devem incluir os cabeçalhos `Content-Security-Policy`, `X-Content-Type-Options: nosniff`, `Referrer-Policy` e `X-Frame-Options: DENY`. | M |
 | RNF11 | Mensagens de erro não devem expor pilha de execução, consultas SQL ou detalhes internos. | M |
@@ -111,17 +111,17 @@ A Tabela 1 resume as permissões por ação.
 | RNF13 | Eventos de autenticação (sucesso, falha, bloqueio) e ações administrativas devem ser registrados em log estruturado. | M |
 | RNF14 | Evidências devem ter tamanho máximo de 5 MB, extensão em lista permitida (`.png`, `.jpg`, `.pdf`, `.txt`, `.pcap`, `.pcapng`), verificação de assinatura de arquivo, nome de armazenamento gerado pelo servidor e armazenamento fora da raiz pública. | D |
 | RNF15 | O *download* de evidência deve usar `Content-Disposition: attachment`. | D |
-| RNF16 | As dependências devem ser verificadas quanto a vulnerabilidades conhecidas (`dotnet list package --vulnerable` e `npm audit`) antes de cada entrega. | M |
+| RNF16 | As dependências devem ser verificadas quanto a vulnerabilidades conhecidas (`pnpm audit`) antes de cada entrega. | M |
 
 ### 3.2 Qualidade e operação
 
 | ID | Requisito | Prioridade |
 |---|---|:-:|
 | RNF17 | O ambiente completo (banco, API e front-end) deve subir com um único comando `docker compose up`. | M |
-| RNF18 | O banco deve ser criado e atualizado por *migrations* do Entity Framework Core. | M |
+| RNF18 | O banco deve ser criado e atualizado por *migrations* geradas pelo `drizzle-kit`. | M |
 | RNF19 | Deve existir carga de dados de demonstração acionada por comando. | M |
 | RNF20 | As regras de transição de status e de autorização devem ter testes automatizados. | M |
-| RNF21 | A API deve ser documentada por OpenAPI, disponível apenas em ambiente de desenvolvimento. | M |
+| RNF21 | Os esquemas de entrada e saída da API devem ser definidos em Zod e compartilhados com o front-end por meio do cliente RPC do Hono (`hc`). | M |
 | RNF22 | Listagens devem responder em até 1 s com 5.000 achados em ambiente local. | D |
 
 ## 4. Regras de negócio

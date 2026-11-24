@@ -110,25 +110,25 @@ classDiagram
     direction LR
 
     class Usuario {
-        Guid Id
+        UUID Id
         string Nome
         string Email
         Papel Papel
-        bool Ativo
+        boolean Ativo
     }
 
     class Projeto {
-        Guid Id
+        UUID Id
         string Prefixo
         string Nome
         string Descricao
-        bool Arquivado
-        int ProximoNumeroAchado
+        boolean Arquivado
+        number ProximoNumeroAchado
         GerarCodigoAchado() string
     }
 
     class Ativo {
-        Guid Id
+        UUID Id
         string Nome
         TipoAtivo Tipo
         string Identificador
@@ -136,7 +136,7 @@ classDiagram
     }
 
     class Achado {
-        Guid Id
+        UUID Id
         string Codigo
         string Titulo
         string Descricao
@@ -147,47 +147,47 @@ classDiagram
         string Impacto
         string PassosReproducao
         string CorrecaoProposta
-        int CweId
+        number CweId
         string CveId
-        decimal NotaCvss
-        DateOnly DataLimite
-        DateTime EncerradoEm
+        number NotaCvss
+        Date DataLimite
+        Date EncerradoEm
         AtribuirResponsavel(Usuario, Usuario autor)
         Transicionar(StatusAchado destino, Usuario autor, string justificativa)
-        EstaVencido(DateOnly hoje) bool
+        EstaVencido(Date hoje) bool
     }
 
     class CategoriaOwasp {
-        int Id
+        number Id
         string Versao
         string Codigo
         string Nome
     }
 
     class EventoHistorico {
-        Guid Id
+        UUID Id
         TipoEvento Tipo
         string Campo
         string ValorAnterior
         string ValorNovo
         string Justificativa
-        DateTime OcorridoEm
+        Date OcorridoEm
     }
 
     class Evidencia {
-        Guid Id
+        UUID Id
         string NomeOriginal
         string NomeArmazenado
         string TipoConteudo
-        long TamanhoBytes
+        number TamanhoBytes
         string HashSha256
         string Descricao
     }
 
     class Comentario {
-        Guid Id
+        UUID Id
         string Texto
-        DateTime CriadoEm
+        Date CriadoEm
     }
 
     Projeto "1" *-- "0..*" Achado : contém
@@ -207,7 +207,7 @@ classDiagram
 
 *Figura 2 — Modelo de domínio.*
 
-As regras de transição de status e de atribuição ficam nos métodos da entidade `Achado` (`Transicionar` e `AtribuirResponsavel`). Essa decisão concentra as regras de negócio em um único ponto, testável sem banco de dados e sem HTTP. Os *controllers* apenas carregam a entidade, chamam o método e persistem o resultado.
+As regras de transição de status e de atribuição ficam em funções puras do módulo de domínio (`transicionar` e `atribuirResponsavel`). Essa decisão concentra as regras de negócio em um único ponto, testável sem banco de dados e sem HTTP. Os *handlers* das rotas apenas carregam a entidade, chamam o método e persistem o resultado.
 
 ### 2.1 Enumerações
 
@@ -223,11 +223,11 @@ As regras de transição de status e de atribuição ficam nos métodos da entid
 | `TipoAtivo` (D) | `AplicacaoWeb`, `Api`, `AplicativoMovel`, `Servidor`, `ServicoRede`, `RepositorioCodigo`, `Outro` |
 | `Ambiente` (D) | `Desenvolvimento`, `Homologacao`, `Producao`, `Laboratorio` |
 
-As enumerações são gravadas no banco como texto, o que facilita a leitura direta das tabelas e evita erros quando a ordem dos valores muda.
+As enumerações são declaradas como uniões de literais em TypeScript e gravadas no banco como texto, o que facilita a leitura direta das tabelas e evita erros quando a ordem dos valores muda.
 
 ## 3. Modelo de dados
 
-A Figura 3 apresenta o modelo físico em PostgreSQL. A tabela `usuarios` corresponde à entidade de usuário do ASP.NET Core Identity; o diagrama mostra apenas as colunas usadas pelo domínio.
+A Figura 3 apresenta o modelo físico em PostgreSQL. As tabelas são declaradas em TypeScript com Drizzle ORM, e as *migrations* são geradas a partir dessas declarações.
 
 ```mermaid
 erDiagram
@@ -295,7 +295,7 @@ erDiagram
         timestamptz criado_em
         timestamptz atualizado_em
         timestamptz encerrado_em
-        uint xmin "controle de concorrência"
+        int versao "controle de concorrência"
     }
 
     eventos_historico {
@@ -323,6 +323,16 @@ erDiagram
         timestamptz enviada_em
     }
 
+    sessoes {
+        uuid id PK
+        uuid usuario_id FK
+        char token_hash UK
+        timestamptz criada_em
+        timestamptz expira_em
+        varchar ip
+        varchar user_agent
+    }
+
     comentarios {
         uuid id PK
         uuid achado_id FK
@@ -331,6 +341,7 @@ erDiagram
         timestamptz criado_em
     }
 
+    usuarios ||--o{ sessoes : possui
     usuarios ||--o{ projetos : "responsável técnico"
     projetos ||--o{ ativos : contém
     projetos ||--o{ achados : contém
@@ -389,9 +400,22 @@ erDiagram
 | `data_limite` | `date` | sim | | RN09, RN10. |
 | `criado_em`, `atualizado_em` | `timestamptz` | não | | Datas em UTC. |
 | `encerrado_em` | `timestamptz` | sim | | RN06. |
-| `xmin` | `xid` | não | coluna de sistema | Token de concorrência otimista do PostgreSQL. |
+| `versao` | `int` | não | padrão `1` | Incrementada a cada alteração; usada na concorrência otimista. |
 
-**Tabela 4 — `eventos_historico`**
+**Tabela 4 — `sessoes`**
+
+| Coluna | Tipo | Nulo | Descrição |
+|---|---|:-:|---|
+| `id` | `uuid` | não | Identificador. |
+| `usuario_id` | `uuid` | não | Dono da sessão. |
+| `token_hash` | `char(64)` | não | SHA-256 do *token* enviado no *cookie*. O *token* em claro nunca é gravado. |
+| `criada_em` | `timestamptz` | não | Momento da entrada. |
+| `expira_em` | `timestamptz` | não | `criada_em` + 8 horas (RNF04). |
+| `ip`, `user_agent` | `varchar` | sim | Registro para auditoria. |
+
+Na entrada, a API gera o *token* com `crypto.randomBytes(32)`, grava o *hash* e envia o *token* no *cookie*. Em cada requisição, a API calcula o *hash* do *cookie* recebido e busca a sessão não expirada. A saída apaga a linha; a troca de senha e a desativação apagam todas as sessões do usuário.
+
+**Tabela 5 — `eventos_historico`**
 
 | Coluna | Tipo | Nulo | Descrição |
 |---|---|:-:|---|
@@ -406,7 +430,7 @@ erDiagram
 
 A tabela `eventos_historico` só recebe inserções. A aplicação não expõe operação de alteração ou exclusão sobre ela.
 
-**Tabela 5 — `evidencias` (D)**
+**Tabela 6 — `evidencias` (D)**
 
 | Coluna | Tipo | Nulo | Descrição |
 |---|---|:-:|---|
@@ -425,6 +449,7 @@ A tabela `eventos_historico` só recebe inserções. A aplicação não expõe o
 | `achados` | (`data_limite`) parcial onde `encerrado_em is null` | Consulta de vencidos. |
 | `eventos_historico` | (`achado_id`, `ocorrido_em`) | Exibição do histórico. |
 | `usuarios` | único (`email` normalizado) | Entrada no sistema. |
+| `sessoes` | único (`token_hash`) | Validação da sessão em cada requisição. |
 
 ### 3.3 Carga inicial
 
@@ -486,9 +511,9 @@ stateDiagram-v2
 
 *Figura 5 — Máquina de estados do achado.*
 
-A Tabela 6 detalha cada transição com o papel exigido. A implementação deve usar esta tabela como fonte única: o método `Achado.Transicionar` consulta uma estrutura equivalente, e os testes automatizados percorrem todas as combinações de estado, destino e papel.
+A Tabela 7 detalha cada transição com o papel exigido. A implementação deve usar esta tabela como fonte única: a função `transicionar` consulta uma estrutura equivalente, e os testes automatizados percorrem todas as combinações de estado, destino e papel.
 
-**Tabela 6 — Transições de status**
+**Tabela 7 — Transições de status**
 
 | Origem | Destino | Papéis | Condições | Efeitos |
 |---|---|---|---|---|
@@ -503,7 +528,7 @@ A Tabela 6 detalha cada transição com o papel exigido. A implementação deve 
 | AguardandoVerificacao | EmCorrecao | Analista, Admin | Justificativa | Evento `Transicao`. |
 | Corrigido, FalsoPositivo, RiscoAceito | Aberto | Analista, Admin | Justificativa | Limpa `encerrado_em` (RN06). |
 
-Qualquer combinação ausente da Tabela 6 é inválida e retorna HTTP 409. Combinação existente, mas com papel não autorizado, retorna HTTP 403.
+Qualquer combinação ausente da Tabela 7 é inválida e retorna HTTP 409. Combinação existente, mas com papel não autorizado, retorna HTTP 403.
 
 ## 7. Diagramas de sequência
 
@@ -520,14 +545,14 @@ sequenceDiagram
     participant DB as PostgreSQL
 
     A->>UI: preenche formulário e envia
-    UI->>API: POST /api/projetos/{id}/achados + token CSRF
-    API->>API: valida cookie, token CSRF e papel
-    API->>API: valida DTO (tamanhos, enums, CWE)
+    UI->>API: POST /api/projetos/{id}/achados
+    API->>API: verifica origem (csrf), sessão e papel
+    API->>API: valida corpo com Zod (tamanhos, enums, CWE)
     API->>DB: BEGIN; SELECT projeto FOR UPDATE
     DB-->>API: projeto
-    API->>D: projeto.GerarCodigoAchado()
+    API->>D: gerarCodigoAchado(projeto)
     D-->>API: "WEB-0007"
-    API->>D: new Achado(...), evento Criacao
+    API->>D: criarAchado(...), evento Criacao
     API->>DB: INSERT achado, INSERT evento; UPDATE projeto; COMMIT
     API-->>UI: 201 Created + Location
     UI-->>A: exibe detalhe do achado
@@ -553,16 +578,16 @@ sequenceDiagram
     UI->>API: POST /api/achados/{id}/transicoes {destino, justificativa, versao}
     API->>DB: SELECT achado
     DB-->>API: achado
-    API->>D: Transicionar(AguardandoVerificacao, usuario, justificativa)
+    API->>D: transicionar(achado, AguardandoVerificacao, usuario, justificativa)
     alt transição inexistente
-        D-->>API: TransicaoInvalidaException
+        D-->>API: TransicaoInvalidaError
         API-->>UI: 409 Conflict
     else papel ou propriedade não autorizados
-        D-->>API: AcessoNegadoException
+        D-->>API: AcessoNegadoError
         API-->>UI: 403 Forbidden
     else permitida
         D-->>API: status alterado + EventoHistorico
-        API->>DB: UPDATE achado WHERE xmin = versao; INSERT evento
+        API->>DB: UPDATE achado SET versao = versao + 1 WHERE id = ? AND versao = ?; INSERT evento
         alt versão divergente
             DB-->>API: 0 linhas afetadas
             API-->>UI: 409 Conflict (recarregar)
