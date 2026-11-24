@@ -19,8 +19,9 @@ O VulnCase centraliza os achados de segurança de um projeto em um único fluxo:
 
 ## Pilha prevista
 
-- Back-end: ASP.NET Core Web API (.NET 10 LTS), Entity Framework Core, PostgreSQL
+- Back-end: Hono sobre Node.js 24 LTS, TypeScript, Drizzle ORM, PostgreSQL
 - Front-end: React com TypeScript e Vite
+- Organização: monorepositório com *workspaces* do pnpm
 - Ambiente: Docker Compose
 
 ## Estrutura do repositório
@@ -29,8 +30,9 @@ O VulnCase centraliza os achados de segurança de um projeto em um único fluxo:
 vulncase/
 ├── docs/            documentação do projeto
 ├── src/
-│   ├── backend/     API ASP.NET Core
-│   └── frontend/    aplicação React
+│   ├── backend/        API Hono
+│   ├── frontend/       aplicação React
+│   └── compartilhado/  esquemas Zod e tipos usados pelos dois lados
 └── README.md
 ```
 
