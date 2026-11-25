@@ -2,6 +2,8 @@ import { createBrowserRouter } from 'react-router'
 import { RotaPapel, RotaProtegida } from './auth/rotas-protegidas'
 import { Layout } from './componentes/layout'
 import { PaginaAchados } from './paginas/achados/PaginaAchados'
+import { PaginaEditarAchado } from './paginas/achados/PaginaEditarAchado'
+import { PaginaNovoAchado } from './paginas/achados/PaginaNovoAchado'
 import { PaginaConta } from './paginas/conta/PaginaConta'
 import { PaginaEntrar } from './paginas/entrar/PaginaEntrar'
 import { PaginaNaoEncontrada } from './paginas/erro/PaginaNaoEncontrada'
@@ -29,6 +31,8 @@ export const roteador = createBrowserRouter([
             children: [
               { path: 'projetos/novo', element: <PaginaFormularioProjeto /> },
               { path: 'projetos/:id/editar', element: <PaginaFormularioProjeto /> },
+              { path: 'projetos/:id/achados/novo', element: <PaginaNovoAchado /> },
+              { path: 'achados/:id/editar', element: <PaginaEditarAchado /> },
             ],
           },
           {
