@@ -30,6 +30,11 @@ export default tseslint.config(
     },
   },
   {
+    // Testes leem arquivos do próprio repositório; os caminhos não vêm de usuários.
+    files: ['src/*/test/**/*.ts'],
+    rules: { 'security/detect-non-literal-fs-filename': 'off' },
+  },
+  {
     files: ['src/frontend/**/*.{ts,tsx}'],
     plugins: { 'react-hooks': reactHooks },
     rules: {
