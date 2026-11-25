@@ -3,7 +3,7 @@ import { criarAppSemBanco } from '../apoio/app-sem-banco.js'
 
 function montar() {
   const { app, linhas } = criarAppSemBanco()
-  app.get('/api/explodir', () => {
+  app.get('/explodir', () => {
     throw new Error('SELECT * FROM segredo -- /srv/app/arquivo.ts:42')
   })
   return { app, linhas }
@@ -19,7 +19,7 @@ describe('tratamento de erros', () => {
 
   it('erro não tratado retorna 500 genérico e é registrado com requestId', async () => {
     const { app, linhas } = montar()
-    const res = await app.request('/api/explodir')
+    const res = await app.request('/explodir')
     expect(res.status).toBe(500)
     expect(res.headers.get('content-type')).toContain('application/problem+json')
     const texto = await res.text()
@@ -34,10 +34,16 @@ describe('tratamento de erros', () => {
     expect(JSON.stringify(registro)).toContain('SELECT')
   })
 
-  it('rota inexistente retorna 404 Problem Details', async () => {
+  it('rota inexistente fora de /api retorna 404 Problem Details', async () => {
     const { app } = montar()
-    const res = await app.request('/api/nao-existe')
+    const res = await app.request('/nao-existe')
     expect(res.status).toBe(404)
     expect(((await res.json()) as { status: number }).status).toBe(404)
+  })
+
+  it('rota inexistente sob /api sem sessão retorna 401, sem revelar se existe', async () => {
+    const { app } = montar()
+    const res = await app.request('/api/nao-existe')
+    expect(res.status).toBe(401)
   })
 })

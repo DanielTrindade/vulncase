@@ -22,7 +22,7 @@ describe('cabeçalhos de segurança (RNF10)', () => {
 
   it('aplica os cabeçalhos também nas respostas de erro', async () => {
     const res = await montar().request('/api/nao-existe')
-    expect(res.status).toBe(404)
+    expect(res.status).toBe(401)
     expect(res.headers.get('x-frame-options')).toBe('DENY')
   })
 })
@@ -31,13 +31,22 @@ describe('verificação de origem (RNF05)', () => {
   const corpo = JSON.stringify({ a: 1 })
   const json = { 'Content-Type': 'application/json' }
 
-  it('aceita POST da origem configurada', async () => {
+  it('aceita POST da origem configurada (segue para a verificação de sessão)', async () => {
     const res = await montar().request('/api/eco', {
       method: 'POST',
       body: corpo,
       headers: { ...json, Origin: ORIGEM_TESTE },
     })
-    expect(res.status).toBe(200)
+    expect(res.status).toBe(401)
+  })
+
+  it('aceita POST com Sec-Fetch-Site: same-origin sem Origin', async () => {
+    const res = await montar().request('/api/eco', {
+      method: 'POST',
+      body: corpo,
+      headers: { ...json, 'Sec-Fetch-Site': 'same-origin' },
+    })
+    expect(res.status).toBe(401)
   })
 
   it('recusa POST JSON com Origin diferente (403)', async () => {
