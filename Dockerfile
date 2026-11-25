@@ -26,6 +26,7 @@ WORKDIR /app
 COPY --from=build /out/api/node_modules ./node_modules
 COPY --from=build /out/api/package.json ./
 COPY --from=build /app/src/backend/dist ./dist
+COPY --from=build /app/src/backend/drizzle ./drizzle
 RUN mkdir -p /data/evidencias && chown -R node:node /data
 USER node
 EXPOSE 3000
