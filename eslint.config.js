@@ -30,6 +30,20 @@ export default tseslint.config(
     },
   },
   {
+    // Scripts Node em CommonJS fora dos pacotes (ex.: roteiro de aceite com Playwright).
+    files: ['scripts/**/*.cjs'],
+    languageOptions: {
+      sourceType: 'commonjs',
+      globals: {
+        require: 'readonly',
+        process: 'readonly',
+        console: 'readonly',
+        document: 'readonly',
+      },
+    },
+    rules: { '@typescript-eslint/no-require-imports': 'off' },
+  },
+  {
     // Testes leem arquivos do próprio repositório; os caminhos não vêm de usuários.
     files: ['src/*/test/**/*.ts'],
     rules: { 'security/detect-non-literal-fs-filename': 'off' },
