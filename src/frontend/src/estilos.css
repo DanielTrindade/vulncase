@@ -604,3 +604,10 @@ textarea:focus,
   margin: 0;
   overflow-wrap: anywhere;
 }
+
+/* Texto cadastrado: preserva quebras de linha, sempre como texto (RNF09). */
+.texto-pre {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  margin: 0;
+}

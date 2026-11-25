@@ -5,6 +5,9 @@ import { PaginaConta } from './paginas/conta/PaginaConta'
 import { PaginaEntrar } from './paginas/entrar/PaginaEntrar'
 import { PaginaNaoEncontrada } from './paginas/erro/PaginaNaoEncontrada'
 import { PaginaPainel } from './paginas/painel/PaginaPainel'
+import { PaginaFormularioProjeto } from './paginas/projetos/PaginaFormularioProjeto'
+import { PaginaProjeto } from './paginas/projetos/PaginaProjeto'
+import { PaginaProjetos } from './paginas/projetos/PaginaProjetos'
 import { PaginaUsuarios } from './paginas/usuarios/PaginaUsuarios'
 
 export const roteador = createBrowserRouter([
@@ -17,6 +20,15 @@ export const roteador = createBrowserRouter([
         children: [
           { index: true, element: <PaginaPainel /> },
           { path: 'conta', element: <PaginaConta /> },
+          { path: 'projetos', element: <PaginaProjetos /> },
+          { path: 'projetos/:id', element: <PaginaProjeto /> },
+          {
+            element: <RotaPapel papeis={['Analista', 'Administrador']} />,
+            children: [
+              { path: 'projetos/novo', element: <PaginaFormularioProjeto /> },
+              { path: 'projetos/:id/editar', element: <PaginaFormularioProjeto /> },
+            ],
+          },
           {
             element: <RotaPapel papeis={['Administrador']} />,
             children: [{ path: 'usuarios', element: <PaginaUsuarios /> }],
