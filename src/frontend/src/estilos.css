@@ -588,3 +588,19 @@ textarea:focus,
   color: var(--texto-suave);
   flex-wrap: wrap;
 }
+
+/* ---------- lista de dados ---------- */
+.lista-dados {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 0.4rem 1rem;
+  margin: 0;
+}
+.lista-dados dt {
+  color: var(--texto-suave);
+  font-weight: 500;
+}
+.lista-dados dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
