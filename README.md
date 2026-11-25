@@ -43,7 +43,7 @@ A carga cria um usuário de cada papel e os projetos `REDE`, `WEB` e `COD`, com 
 
 ```bash
 # no .env: NODE_ENV=development
-docker compose exec api node dist/seed-cli.js
+docker compose exec api node dist/db/seed-cli.js
 ```
 
 Fora do Docker: `pnpm --filter @vulncase/backend db:seed`.

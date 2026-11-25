@@ -22,6 +22,8 @@ RUN pnpm --filter @vulncase/backend build \
 # ---------- API ----------
 FROM node:24-alpine AS api
 ENV NODE_ENV=production
+# Caminho explícito: os scripts em dist/db/ não dependem da posição do código empacotado.
+ENV MIGRATIONS_DIRETORIO=/app/drizzle
 WORKDIR /app
 COPY --from=build /out/api/node_modules ./node_modules
 COPY --from=build /out/api/package.json ./
