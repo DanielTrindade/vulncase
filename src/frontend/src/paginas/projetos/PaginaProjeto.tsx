@@ -31,6 +31,9 @@ export function PaginaProjeto() {
           <Link to={`/achados?projetoId=${p.id}`} className="botao">
             Ver achados
           </Link>
+          <a href={`/api/projetos/${p.id}/relatorio.csv`} className="botao" download>
+            Exportar CSV
+          </a>
           {podeGerenciar && (
             <>
               <Link to={`/projetos/${p.id}/editar`} className="botao">

@@ -11,6 +11,7 @@ import { usuarioAtual } from '../middlewares/sessao.js'
 import { validar } from '../middlewares/validacao.js'
 import { registrarAchado } from '../servicos/achados.js'
 import { painelProjeto } from '../servicos/painel.js'
+import { gerarRelatorioCsv } from '../servicos/relatorio-csv.js'
 import {
   arquivarProjeto,
   criarProjeto,
@@ -37,6 +38,23 @@ export const rotasProjetos = new Hono<Ambiente>()
   .get('/:id', validar('param', paramId), async (c) =>
     c.json(await obterProjeto(c.get('deps').db, c.req.valid('param').id), 200),
   )
+  .get('/:id/relatorio.csv', validar('param', paramId), async (c) => {
+    const { csv, nomeArquivo, total } = await gerarRelatorioCsv(
+      c.get('deps').db,
+      c.req.valid('param').id,
+    )
+    c.get('log').info({
+      evento: 'relatorio.csv',
+      usuarioId: usuarioAtual(c).id,
+      projetoId: c.req.valid('param').id,
+      total,
+    })
+    return c.body(csv, 200, {
+      'Content-Type': 'text/csv; charset=utf-8',
+      'Content-Disposition': `attachment; filename="${nomeArquivo}"`,
+      'Cache-Control': 'no-store',
+    })
+  })
   .get('/:id/painel', validar('param', paramId), async (c) =>
     c.json(await painelProjeto(c.get('deps').db, c.req.valid('param').id), 200),
   )

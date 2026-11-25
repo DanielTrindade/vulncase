@@ -207,6 +207,14 @@ describe('matriz de autorização por rota e papel', () => {
       }),
     },
     {
+      rota: 'GET /api/projetos/:id/relatorio.csv',
+      esperado: todos(200),
+      montar: async () => ({
+        metodo: 'GET',
+        caminho: `/api/projetos/${(await projeto()).id}/relatorio.csv`,
+      }),
+    },
+    {
       rota: 'GET /api/painel',
       esperado: todos(200),
       montar: async () => ({ metodo: 'GET', caminho: '/api/painel' }),
