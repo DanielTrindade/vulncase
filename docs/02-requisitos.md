@@ -142,7 +142,7 @@ A Tabela 1 resume as permissões por ação.
 
 ## 5. Escala de severidade
 
-A severidade é qualitativa e atribuída pelo analista. Como referência, a escala acompanha as faixas qualitativas da especificação CVSS v3.1 [REFERÊNCIA NECESSÁRIA: FIRST, CVSS v3.1 Specification Document].
+A severidade é qualitativa e atribuída pelo analista. Como referência, a escala acompanha as faixas qualitativas da especificação do *Common Vulnerability Scoring System* (CVSS), versão 3.1 (FIRST, 2019).
 
 **Tabela 2 — Escala de severidade**
 
@@ -155,3 +155,24 @@ A severidade é qualitativa e atribuída pelo analista. Como referência, a esca
 | Informativa | 0,0 | Versão de servidor exposta no cabeçalho `Server` |
 
 Os exemplos ilustram o uso da escala; a classificação real depende do contexto do sistema analisado.
+
+## 6. Situação dos requisitos desejáveis
+
+Concluído o MVP, foram implementados os requisitos desejáveis listados na Tabela 3. Apenas o RF06 (troca de senha obrigatória na primeira entrada) não foi implementado.
+
+**Tabela 3 — Requisitos desejáveis implementados**
+
+| Requisito | Implementação |
+|---|---|
+| RF11, RF22 | Ativos do projeto e vínculo com o achado, com chave estrangeira composta que garante o mesmo projeto. |
+| RF21 | Comentários no achado, exibidos na linha do tempo do histórico. |
+| RF23 | Campos opcionais de CVE e nota CVSS no registro e na edição. |
+| RF24, RN10 | Data-limite calculada pela severidade, com prazos configuráveis e ajuste manual preservado. |
+| RF25, RF26, RNF14, RNF15 | Evidências com lista de extensões, verificação de assinatura, SHA-256, nome UUID e *download* como anexo. |
+| RF29 | Exportação CSV com neutralização de fórmulas (CWE-1236). |
+| RF30 | Relatório PDF gerado por código, sem interpretação de HTML. |
+| RNF22 | Listagem com 5.000 achados abaixo de 1 s, verificada por teste automatizado. |
+
+## Referências
+
+FORUM OF INCIDENT RESPONSE AND SECURITY TEAMS (FIRST). **Common Vulnerability Scoring System v3.1**: specification document. Revisão 1. [*S. l.*]: FIRST, 2019. Disponível em: https://www.first.org/cvss/v3.1/specification-document. Acesso em: 25 nov. 2026.

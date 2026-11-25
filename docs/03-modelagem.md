@@ -262,6 +262,7 @@ erDiagram
         varchar tipo
         varchar identificador
         varchar ambiente
+        timestamptz criado_em
     }
 
     categorias_owasp {
@@ -292,6 +293,7 @@ erDiagram
         uuid responsavel_id FK
         uuid registrado_por_id FK
         date data_limite
+        boolean data_limite_manual
         timestamptz criado_em
         timestamptz atualizado_em
         timestamptz encerrado_em
@@ -308,6 +310,7 @@ erDiagram
         text valor_novo
         text justificativa
         timestamptz ocorrido_em
+        bigint sequencia "ordem de inserção"
     }
 
     evidencias {
@@ -380,7 +383,7 @@ erDiagram
 |---|---|:-:|---|---|
 | `id` | `uuid` | não | PK | Identificador interno. |
 | `projeto_id` | `uuid` | não | FK `projetos` | RN01. |
-| `ativo_id` | `uuid` | sim | FK `ativos`; mesmo projeto | (D) Ativo afetado. |
+| `ativo_id` | `uuid` | sim | FK composta (`ativo_id`, `projeto_id`) → `ativos` (`id`, `projeto_id`) | (D) Ativo afetado; a chave composta garante o mesmo projeto (RF22). |
 | `codigo` | `varchar(10)` | não | único | Ex.: `WEB-0007`. |
 | `titulo` | `varchar(160)` | não | | Resumo do achado. |
 | `descricao` | `text` | não | até 10.000 caracteres | Descrição técnica. |
@@ -397,7 +400,8 @@ erDiagram
 | `nota_cvss` | `numeric(3,1)` | sim | 0,0 a 10,0 | (D) Informada manualmente. |
 | `responsavel_id` | `uuid` | sim | FK `usuarios`; usuário ativo | RF15. |
 | `registrado_por_id` | `uuid` | não | FK `usuarios` | Autor do registro. |
-| `data_limite` | `date` | sim | | RN09, RN10. |
+| `data_limite` | `date` | sim | | RN09, RN10. Calculada pela severidade no registro e na mudança de severidade. |
+| `data_limite_manual` | `boolean` | não | padrão `false` | (D) Indica ajuste manual da data-limite, que não é recalculada (RF24). |
 | `criado_em`, `atualizado_em` | `timestamptz` | não | | Datas em UTC. |
 | `encerrado_em` | `timestamptz` | sim | | RN06. |
 | `versao` | `int` | não | padrão `1` | Incrementada a cada alteração; usada na concorrência otimista. |
@@ -427,8 +431,9 @@ Na entrada, a API gera o *token* com `crypto.randomBytes(32)`, grava o *hash* e 
 | `valor_anterior`, `valor_novo` | `text` | sim | Valores antes e depois da alteração. |
 | `justificativa` | `text` | sim | Obrigatória nas transições da RF17. |
 | `ocorrido_em` | `timestamptz` | não | Data em UTC. |
+| `sequencia` | `bigint` | não | Identidade gerada pelo banco; desempata eventos gravados no mesmo instante. |
 
-A tabela `eventos_historico` só recebe inserções. A aplicação não expõe operação de alteração ou exclusão sobre ela.
+A tabela `eventos_historico` só recebe inserções. A aplicação não expõe operação de alteração ou exclusão sobre ela, e um gatilho no PostgreSQL recusa `UPDATE`, `DELETE` e `TRUNCATE`. Comentários (RF21) também geram um evento `Comentario`, com o texto em `valor_novo`, para aparecer na linha do tempo.
 
 **Tabela 6 — `evidencias` (D)**
 
@@ -439,6 +444,9 @@ A tabela `eventos_historico` só recebe inserções. A aplicação não expõe o
 | `tipo_conteudo` | `varchar(100)` | não | Tipo MIME determinado pelo servidor a partir da assinatura do arquivo. |
 | `tamanho_bytes` | `bigint` | não | Até 5.242.880. |
 | `hash_sha256` | `char(64)` | não | Integridade da evidência. |
+| `descricao` | `varchar(500)` | sim | Descrição curta informada no envio. |
+
+A tabela `comentarios` (D) guarda `achado_id`, `autor_id`, `texto` (1 a 4.000 caracteres) e `criado_em`; comentários não são editados nem excluídos. A tabela `ativos` (D) guarda `projeto_id`, `nome` (único no projeto), `tipo`, `identificador`, `ambiente` e `criado_em`.
 
 ### 3.2 Índices
 
@@ -446,14 +454,18 @@ A tabela `eventos_historico` só recebe inserções. A aplicação não expõe o
 |---|---|---|
 | `achados` | (`projeto_id`, `status`, `severidade`) | Listagem filtrada e painel por projeto. |
 | `achados` | (`responsavel_id`, `status`) | "Meus achados" do desenvolvedor. |
-| `achados` | (`data_limite`) parcial onde `encerrado_em is null` | Consulta de vencidos. |
-| `eventos_historico` | (`achado_id`, `ocorrido_em`) | Exibição do histórico. |
+| `achados` | (`data_limite`) parcial com `encerrado_em is null` | Consulta de vencidos. |
+| `eventos_historico` | (`achado_id`, `ocorrido_em`, `sequencia`) | Exibição do histórico. |
 | `usuarios` | único (`email` normalizado) | Entrada no sistema. |
 | `sessoes` | único (`token_hash`) | Validação da sessão em cada requisição. |
+| `sessoes` | (`usuario_id`) | Revogação das sessões do usuário. |
+| `evidencias` | (`achado_id`, `enviada_em`); único (`nome_armazenado`) | Lista de evidências do achado. |
+| `comentarios` | (`achado_id`, `criado_em`) | Comentários do achado. |
+| `ativos` | único (`id`, `projeto_id`); único (`projeto_id`, `nome`) | Alvo da chave composta de `achados`; nome único no projeto. |
 
 ### 3.3 Carga inicial
 
-A tabela `categorias_owasp` é populada por *migration* com as dez categorias da versão do OWASP Top 10 adotada na disciplina [PREENCHER: confirmar a versão com o professor]. A coluna `versao` permite incluir outra edição sem alterar achados já classificados.
+A tabela `categorias_owasp` é populada por *migration* com as dez categorias do OWASP Top 10, edição 2021 (OWASP FOUNDATION, 2021). A edição foi adotada por coerência com os exemplos dos documentos; caso a disciplina exija outra, basta uma nova *migration*, pois a coluna `versao` permite incluir outra edição sem alterar achados já classificados.
 
 ## 4. Classificação de dados
 
@@ -522,13 +534,13 @@ A Tabela 7 detalha cada transição com o papel exigido. A implementação deve 
 | Aberto | FalsoPositivo | Analista, Admin | Justificativa | Define `encerrado_em`. |
 | Aberto | RiscoAceito | Admin | Justificativa | Define `encerrado_em`. |
 | EmCorrecao | AguardandoVerificacao | Responsável, Analista, Admin | RN04 | Evento `Transicao`. |
-| EmCorrecao | Aberto | Analista, Admin; sistema | Responsável removido ou desativado (RN11) | Evento `Transicao`. |
+| EmCorrecao | Aberto | Analista, Admin; sistema | Ação "Devolver para Aberto", remoção do responsável ou desativação do usuário (RN11) | Remove o responsável; eventos `Transicao` e `TrocaResponsavel`. |
 | EmCorrecao | RiscoAceito | Admin | Justificativa | Define `encerrado_em`. |
 | AguardandoVerificacao | Corrigido | Analista, Admin | — | Define `encerrado_em`. |
 | AguardandoVerificacao | EmCorrecao | Analista, Admin | Justificativa | Evento `Transicao`. |
 | Corrigido, FalsoPositivo, RiscoAceito | Aberto | Analista, Admin | Justificativa | Limpa `encerrado_em` (RN06). |
 
-Qualquer combinação ausente da Tabela 7 é inválida e retorna HTTP 409. Combinação existente, mas com papel não autorizado, retorna HTTP 403.
+Qualquer combinação ausente da Tabela 7 é inválida e retorna HTTP 409. Combinação existente, mas com papel não autorizado, retorna HTTP 403. Antes dessas regras, a API confere a versão informada; uma versão desatualizada retorna 409 "Conflito de versão". Achados de projeto arquivado não aceitam transições.
 
 ## 7. Diagramas de sequência
 
@@ -621,3 +633,7 @@ sequenceDiagram
 ```
 
 *Figura 8 — Sequência de envio de evidência.*
+
+## Referências
+
+OWASP FOUNDATION. **OWASP Top 10:2021**. [*S. l.*]: OWASP Foundation, 2021. Disponível em: https://owasp.org/Top10/. Acesso em: 25 nov. 2026.

@@ -12,6 +12,10 @@ Execução do roteiro da [seção 10 do documento 01](01-visao-e-escopo.md#10-cr
 
 ## Resultado por passo
 
+A Tabela 1 apresenta o resultado de cada passo do roteiro, com a evidência correspondente.
+
+**Tabela 1 — Resultado dos critérios de aceite**
+
 | # | Critério | Resultado | Evidência |
 |:-:|---|:-:|---|
 | 1 | O administrador entra no sistema e cadastra um analista e um desenvolvedor. | Aprovado | Ana Analista e Davi Desenvolvedor cadastrados pela tela de usuários. [Captura](aceite/01-usuarios-cadastrados.jpg) |

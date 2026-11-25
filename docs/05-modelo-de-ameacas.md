@@ -43,19 +43,19 @@ flowchart LR
 | ID | Categoria | Ameaça | Controle | Requisito |
 |---|---|---|---|---|
 | A01 | *Spoofing* | Força bruta ou reutilização de senha no formulário de entrada. | Senha mínima de 10 caracteres; bloqueio após 5 falhas por 15 min; resposta genérica para usuário inexistente e senha errada. | RNF02, RNF03 |
-| A02 | *Spoofing* | Roubo de sessão por XSS. | *Cookie* `HttpOnly`; CSP sem `unsafe-inline` para *scripts*; renderização de texto sem HTML. | RNF04, RNF09, RNF10 |
-| A03 | *Tampering* | CSRF: página externa dispara transição de status com a sessão da vítima. | `SameSite=Strict` e verificação de origem pelo *middleware* `csrf` do Hono em métodos que alteram estado. | RNF04, RNF05 |
+| A02 | *Spoofing* | Roubo de sessão por XSS. | *Cookie* `HttpOnly`; CSP sem `unsafe-inline` para *scripts* e estilos; renderização de texto sem HTML; lint proíbe `dangerouslySetInnerHTML`. | RNF04, RNF09, RNF10 |
+| A03 | *Tampering* | CSRF: página externa dispara transição de status com a sessão da vítima. | `SameSite=Strict` e verificação de origem pelo *middleware* `verificarOrigem` em métodos que alteram estado, para qualquer tipo de conteúdo (o `csrf` nativo do Hono ignora JSON). | RNF04, RNF05 |
 | A04 | *Tampering* | SQL Injection nos filtros da listagem. | Drizzle ORM com parâmetros e proibição de `sql.raw`; filtros de enumeração validados contra valores permitidos; ordenação por lista fechada de campos. | RNF07, RNF08 |
 | A05 | *Tampering* | Evidência maliciosa (HTML ou SVG com *script*, executável renomeado). | Lista de extensões permitidas; verificação de assinatura do arquivo; nome gerado pelo servidor; *download* com `attachment` e `nosniff`. | RNF14, RNF15 |
 | A06 | *Tampering* | Duas transições simultâneas no mesmo achado, uma sobrescrevendo a outra. | Concorrência otimista pela coluna `versao`. | DT08 |
-| A07 | *Repudiation* | Usuário nega ter encerrado ou aceitado o risco de um achado. | Histórico somente de inserção, com autor, data e justificativa. | RF20, RF17 |
+| A07 | *Repudiation* | Usuário nega ter encerrado ou aceitado o risco de um achado. | Histórico somente de inserção, com autor, data e justificativa; gatilho no banco recusa alteração e exclusão. | RF20, RF17 |
 | A08 | *Repudiation* | Ação administrativa sem rastro (criação de usuário, troca de papel). | Log estruturado de eventos de autenticação e administração. | RNF13 |
 | A09 | *Information disclosure* | Desenvolvedor acessa rota de outro papel chamando a API diretamente. | Autorização no back-end em todas as rotas; testes de integração por rota e papel. | RNF06, RNF20 |
 | A10 | *Information disclosure* | Referência direta insegura a objeto (IDOR): acesso a evidência pelo identificador. | Identificadores UUID; verificação de autorização no *download*, não apenas na listagem. | RNF06 |
 | A11 | *Information disclosure* | Mensagens de erro revelam SQL ou caminhos internos. | *Problem Details* genérico em produção; detalhes apenas no log do servidor. | RNF11 |
-| A12 | *Information disclosure* | Segredos versionados no repositório. | Variáveis de ambiente; `.env` no `.gitignore`; verificação com `gitleaks` antes de cada entrega. | RNF12 |
-| A13 | *Information disclosure* | Dependência com vulnerabilidade conhecida. | `pnpm audit` antes de cada entrega. | RNF16 |
-| A14 | *Denial of service* | Envio de arquivos grandes esgota disco. | Limite de 5 MB por arquivo, aplicado também no *proxy*. | RNF14 |
+| A12 | *Information disclosure* | Segredos versionados no repositório. | Variáveis de ambiente; `.env` no `.gitignore`; `gitleaks` no CI a cada *push* e *pull request*. | RNF12 |
+| A13 | *Information disclosure* | Dependência com vulnerabilidade conhecida. | `pnpm audit --audit-level=high` no CI; `overrides` para dependências transitivas vulneráveis. | RNF16 |
+| A14 | *Denial of service* | Envio de arquivos grandes esgota disco. | Limite de 5 MB por arquivo na API; 64 KB para corpos JSON; 6 MB no *proxy* para comportar o *multipart*. | RNF14 |
 | A15 | *Denial of service* | Listagem sem limite de página sobrecarrega a API. | Tamanho de página máximo de 100. | RF18 |
 | A16 | *Elevation of privilege* | *Mass assignment*: cliente envia `status`, `papel` ou `registradoPorId` no corpo da edição. | DTOs de entrada com apenas os campos editáveis; status só muda pela rota de transição. | RNF07 |
 | A17 | *Elevation of privilege* | Desenvolvedor conclui correção de achado atribuído a outra pessoa. | Verificação de propriedade na função `transicionar`. | RN04 |

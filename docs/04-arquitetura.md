@@ -38,8 +38,9 @@ flowchart LR
 | Requisições no front-end | Cliente `hc` do Hono + TanStack Query | Chamadas tipadas a partir das rotas; *cache* e invalidação das listagens. |
 | Formulários | React Hook Form + esquemas Zod compartilhados | Validação no cliente para usabilidade; a validação de segurança permanece no back-end. |
 | Gráficos do painel | Recharts | Barras por severidade e status. |
-| Testes | Vitest e Testcontainers (PostgreSQL) | Testes de domínio sem banco e testes de integração com banco real. |
-| Qualidade | ESLint com `eslint-plugin-security` | Regras contra padrões inseguros, como `eval` e expressões regulares vulneráveis. |
+| Relatório PDF | `pdfkit` com fonte DejaVu embutida | Documento desenhado por código, sem interpretar HTML (RF30). |
+| Testes | Vitest, Testcontainers (PostgreSQL) e Playwright | Testes de domínio sem banco, testes de integração com banco real e roteiros de aceite e de segurança pelo navegador. |
+| Qualidade | ESLint com `eslint-plugin-security`, Prettier, `pnpm audit` e `gitleaks` | Regras contra padrões inseguros (`eval`, `sql.raw`, `dangerouslySetInnerHTML`), formatação e verificação de dependências e segredos no CI. |
 | Monorepositório | *Workspaces* do pnpm | Pacotes `backend`, `frontend` e `compartilhado`. |
 | Ambiente | Docker Compose e Caddy | Subida com um comando (RNF17) e HTTPS local. |
 
@@ -50,51 +51,42 @@ O repositório é um monorepositório com três pacotes. O pacote `compartilhado
 ```
 vulncase/
 ├── pnpm-workspace.yaml
-├── docker-compose.yml
-├── Caddyfile
+├── docker-compose.yml, Dockerfile
+├── Caddyfile                      proxy reverso (HTTPS local)
+├── docker/Caddyfile.web           arquivos estáticos do front-end
+├── scripts/                       roteiro de aceite e verificação de segurança (Playwright)
 └── src/
     ├── compartilhado/
     │   └── src/
-    │       ├── enums.ts               Severidade, StatusAchado, Papel...
-    │       └── esquemas/              esquemas Zod de entrada e saída
+    │       ├── enums.ts               Severidade, StatusAchado, Papel e rótulos
+    │       └── esquemas/              esquemas Zod de entrada (usuário, projeto, achado)
     ├── backend/
     │   ├── src/
-    │   │   ├── index.ts               inicialização do servidor
+    │   │   ├── index.ts               inicialização: configuração, migrations, admin inicial
     │   │   ├── app.ts                 ordem dos middlewares e montagem das rotas; exporta AppType
-    │   │   ├── dominio/
-    │   │   │   ├── achado.ts          transicionar(), atribuirResponsavel(), estaVencido()
+    │   │   ├── config.ts              variáveis de ambiente validadas com Zod
+    │   │   ├── dominio/               funções puras, sem banco e sem HTTP
+    │   │   │   ├── achado.ts          transicionar(), atribuirResponsavel(), acoesPermitidas(), estaVencido()
     │   │   │   ├── regras-transicao.ts  Tabela 7 do documento 03
+    │   │   │   ├── prazo.ts           data-limite por severidade (RN10)
     │   │   │   ├── projeto.ts         gerarCodigoAchado()
-    │   │   │   └── erros.ts           TransicaoInvalidaError, AcessoNegadoError...
-    │   │   ├── db/
-    │   │   │   ├── schema.ts          tabelas Drizzle
-    │   │   │   ├── cliente.ts
-    │   │   │   └── seed.ts            dados de demonstração
-    │   │   ├── middlewares/
-    │   │   │   ├── sessao.ts          valida o cookie e carrega o usuário
-    │   │   │   ├── autorizacao.ts     exigirPapel(...)
-    │   │   │   └── erros.ts           respostas Problem Details sem detalhes internos
-    │   │   ├── rotas/
-    │   │   │   ├── auth.ts
-    │   │   │   ├── usuarios.ts
-    │   │   │   ├── projetos.ts
-    │   │   │   ├── achados.ts
-    │   │   │   ├── evidencias.ts
-    │   │   │   └── painel.ts
-    │   │   └── infra/
-    │   │       ├── senha.ts           Argon2id
-    │   │       ├── armazenamento.ts   gravação e leitura de evidências
-    │   │       └── log.ts
-    │   ├── drizzle/                   migrations geradas
+    │   │   │   └── erros.ts           erros com código HTTP e título público
+    │   │   ├── db/                    schema.ts, cliente.ts, migrar.ts, admin-inicial.ts, seed.ts
+    │   │   ├── middlewares/           requisicao, seguranca, sessao, autorizacao, validacao, erros
+    │   │   ├── servicos/              casos de uso: carregam, chamam o domínio e persistem
+    │   │   ├── rotas/                 auth, usuarios, projetos, achados, evidencias, painel, categorias
+    │   │   └── infra/                 senha (Argon2id), token, log, armazenamento, tipos-arquivo, csv
+    │   ├── drizzle/                   migrations geradas (e migrations SQL próprias)
     │   └── test/
-    │       ├── dominio/               transições e regras de negócio
-    │       └── integracao/            autorização por rota e fluxo HTTP
+    │       ├── dominio/               transições e regras de negócio (100% de cobertura)
+    │       ├── unidade/               configuração, senha, CSV, tipos de arquivo
+    │       └── integracao/            rotas HTTP com PostgreSQL real, incluindo a matriz de autorização
     └── frontend/
         ├── src/
         │   ├── api/                   cliente hc e hooks do TanStack Query
         │   ├── auth/                  contexto de sessão e rotas protegidas
         │   ├── paginas/               uma pasta por tela do mapa de telas
-        │   └── componentes/           tabela, filtros, selos de severidade e status
+        │   └── componentes/           campo, diálogo, selos, painel, estados de carregamento
         └── vite.config.ts             proxy de /api para a API em desenvolvimento
 ```
 
@@ -104,25 +96,30 @@ A Listagem 1 mostra a ordem de aplicação dos *middlewares* em `app.ts`. A orde
 
 ```ts
 const app = new Hono<Ambiente>()
-  .use(registrarRequisicao())
-  .use(secureHeaders({ contentSecurityPolicy: csp, xFrameOptions: 'DENY' }))
-  .use('/api/*', verificarOrigem(config.origemPermitida))
-  .use('/api/*', bodyLimit({ maxSize: 64 * 1024 }))
+  .use(registrarRequisicao(deps))
+  .use(cabecalhosSeguranca())
+  .use('/api/*', verificarOrigem(deps.config.origemPermitida))
+  .use('/api/*', limitarCorpoPorRota(deps.config.evidenciasTamanhoMaximoBytes))
   .use('/api/*', carregarSessao())
+  .use('/api/*', exigirSessao())
+  .get('/api/health', (c) => c.json({ status: 'ok' as const }))
   .route('/api/auth', rotasAuth)
   .route('/api/usuarios', rotasUsuarios)
   .route('/api/projetos', rotasProjetos)
   .route('/api/achados', rotasAchados)
-  .route('/api/evidencias', rotasEvidencias)
+  .route('/api/categorias-owasp', rotasCategorias)
   .route('/api/painel', rotasPainel)
-  .onError(tratarErro)
+  .route('/api/evidencias', rotasEvidencias)
 
-export type AppType = typeof app
+app.onError(tratarErro)
+app.notFound(naoEncontrado)
+
+export type AppType = ReturnType<typeof criarApp>
 ```
 
 *Listagem 1 — Composição da aplicação em `app.ts`.*
 
-O limite de 64 KB vale para corpos JSON. A rota de envio de evidências sobrescreve esse limite com 5 MB (RNF14). O *middleware* `carregarSessao` apenas identifica o usuário; cada rota declara os papéis exigidos com `exigirPapel`, e as regras de propriedade ficam nas funções de domínio.
+O limite de 64 KB vale para corpos JSON; somente a rota de envio de evidências aceita o tamanho máximo do arquivo mais a folga do *multipart* (RNF14). O *middleware* `carregarSessao` apenas identifica o usuário, e `exigirSessao` recusa com 401 qualquer rota sob `/api`, exceto `GET /api/health` e `POST /api/auth/login`. Cada rota declara os papéis exigidos com `exigirPapel`, e as regras de propriedade ficam nas funções de domínio. A aplicação é criada pela função `criarApp(deps)`, que recebe banco, configuração, *log* e armazenamento; os testes usam a mesma função com um banco isolado.
 
 ## 4. Decisões técnicas
 
@@ -138,6 +135,11 @@ O limite de 64 KB vale para corpos JSON. A rota de envio de evidências sobrescr
 | DT08 | Concorrência otimista com coluna `versao` | Última gravação prevalece | Evita que uma transição sobrescreva outra feita em paralelo. |
 | DT09 | Evidências em volume de disco | Evidências no banco (`bytea`) | Mantém o banco pequeno; o volume não é exposto pelo *proxy*. |
 | DT10 | Esquemas Zod em pacote compartilhado | Validação duplicada no front-end e no back-end | Uma única definição de regra de entrada para os dois lados. |
+| DT11 | Verificação de origem própria (`verificarOrigem`) | *Middleware* `csrf` nativo do Hono | O `csrf` do Hono só verifica corpos de formulário e aceita JSON de qualquer origem; a verificação própria vale para qualquer tipo de conteúdo (registrado como `VULN-0008` no documento 08). |
+| DT12 | Histórico protegido por gatilho no banco | Proteção apenas no código | O PostgreSQL recusa `UPDATE`, `DELETE` e `TRUNCATE` em `eventos_historico`, mesmo que a aplicação tente (A07). |
+| DT13 | Chave estrangeira composta (`ativo_id`, `projeto_id`) | Validação apenas na aplicação | Garante no banco que o ativo vinculado pertence ao projeto do achado (RF22). |
+| DT14 | PDF desenhado por código (`pdfkit`) | Conversão de HTML para PDF | Nenhum conteúdo cadastrado é interpretado como marcação; evita navegador embutido no servidor. |
+| DT15 | Versão conferida antes das regras de transição | Regras antes da versão | Uma ação feita sobre um estado desatualizado recebe sempre "Conflito de versão" (409), o que orienta o usuário a recarregar. |
 
 ## 5. Contrato da API
 
@@ -170,7 +172,8 @@ Todas as rotas ficam sob `/api`, exigem sessão válida (exceto `POST /api/auth/
 | PUT | `/api/achados/{id}` | Analista, Admin | Edita campos (achado não encerrado). | RF12, RN05 |
 | PUT | `/api/achados/{id}/responsavel` | Analista, Admin | Atribui ou remove responsável. | RF15 |
 | POST | `/api/achados/{id}/transicoes` | conforme Tabela 7 do doc. 03 | Altera status. | RF16, RF17 |
-| GET | `/api/achados/{id}/historico` | todos | Eventos do achado. | RF20 |
+| GET | `/api/achados/{id}/historico` | todos | Eventos do achado, incluindo comentários. | RF20 |
+| GET | `/api/achados/{id}/evidencias` | todos | (D) Lista evidências. | RF25 |
 | POST | `/api/achados/{id}/comentarios` | todos (Dev só nos seus) | (D) Comenta. | RF21 |
 | POST | `/api/achados/{id}/evidencias` | todos (Dev só nos seus) | (D) Envia evidência (`multipart/form-data`). | RF25 |
 | GET | `/api/evidencias/{id}/download` | todos | (D) Baixa evidência. | RF26 |
@@ -178,6 +181,7 @@ Todas as rotas ficam sob `/api`, exigem sessão válida (exceto `POST /api/auth/
 | GET | `/api/projetos/{id}/relatorio.csv` | todos | (D) Exporta CSV. | RF29 |
 | GET | `/api/projetos/{id}/relatorio.pdf` | todos | (D) Gera PDF. | RF30 |
 | GET | `/api/categorias-owasp` | todos | Catálogo de categorias. | RF14 |
+| GET | `/api/health` | público | Verificação de funcionamento. | — |
 
 ### 5.1 Exemplos de corpo
 
@@ -209,7 +213,7 @@ Transição (`POST /api/achados/{id}/transicoes`):
 }
 ```
 
-Filtros da listagem (`GET /api/achados`): `projetoId`, `status` (repetível), `severidade` (repetível), `responsavelId`, `semResponsavel`, `categoriaOwaspId`, `vencido`, `busca` (título ou código), `ordenarPor` (`severidade`, `criadoEm`, `dataLimite`), `pagina`, `tamanhoPagina` (máximo 100). O campo `ordenarPor` é validado contra essa lista fechada antes de chegar à consulta.
+Filtros da listagem (`GET /api/achados`): `projetoId`, `status` (repetível), `severidade` (repetível), `responsavelId`, `semResponsavel`, `categoriaOwaspId`, `ativoId`, `vencido`, `busca` (título ou código), `ordenarPor` (`severidade`, `criadoEm`, `dataLimite`), `ordem` (`asc`, `desc`), `pagina`, `tamanhoPagina` (máximo 100). Parâmetros desconhecidos são recusados com 400. O campo `ordenarPor` é validado contra essa lista fechada antes de chegar à consulta.
 
 ### 5.2 Códigos de resposta
 
@@ -237,4 +241,6 @@ Variáveis de ambiente lidas pela API e validadas com Zod na inicialização; a 
 | `EVIDENCIAS_TAMANHO_MAXIMO_BYTES` | Padrão `5242880`. |
 | `ADMIN_EMAIL_INICIAL`, `ADMIN_SENHA_INICIAL` | Criação do primeiro administrador quando o banco está vazio. |
 | `PRAZO_DIAS_CRITICA`, `PRAZO_DIAS_ALTA`, `PRAZO_DIAS_MEDIA`, `PRAZO_DIAS_BAIXA` | Prazos de correção da RN10, em dias. Padrões 7, 30, 90 e 180. |
-| `NODE_ENV` | `development` habilita a carga de demonstração e mensagens de erro detalhadas no *log*. |
+| `DEMO_SENHA` | Senha dos usuários da carga de demonstração (apenas `development`). |
+| `PORT`, `LOG_LEVEL` | Porta da API (padrão 3000) e nível do *log* (padrão `info`). |
+| `NODE_ENV` | `development` habilita a carga de demonstração. Em qualquer ambiente, detalhes de erro aparecem apenas no *log*. |

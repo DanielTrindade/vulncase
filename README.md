@@ -58,26 +58,52 @@ A senha é a da variável `DEMO_SENHA`; sem ela, `demo-vulncase-2026`. Use apena
 
 ### Desenvolvimento
 
+Fora do Docker, a API precisa de um PostgreSQL acessível e das variáveis `DATABASE_URL` e `ORIGEM_PERMITIDA=http://localhost:5173` (a origem do Vite). As *migrations* são aplicadas na subida.
+
 ```bash
 pnpm install
 pnpm dev         # API em :3000 e Vite em :5173 (com proxy de /api)
-pnpm lint
-pnpm typecheck
-pnpm test
 ```
 
-## Pilha prevista
+### Qualidade e testes
 
-- Back-end: Hono sobre Node.js 24 LTS, TypeScript, Drizzle ORM, PostgreSQL
-- Front-end: React com TypeScript e Vite
+```bash
+pnpm lint          # ESLint (inclui eslint-plugin-security)
+pnpm format:check  # Prettier
+pnpm typecheck     # TypeScript estrito nos três pacotes
+pnpm test          # Vitest; os testes de integração sobem um PostgreSQL 17 com Testcontainers (requer Docker)
+pnpm audit
+```
+
+O teste do back-end gera relatório de cobertura e exige 100% em `src/dominio`. Com o ambiente Docker no ar, dois roteiros pelo navegador (Playwright) reproduzem os documentos 07 e 08:
+
+```bash
+pnpm aceite                 # critérios de aceite do MVP, com capturas em docs/aceite
+pnpm verificacao            # testes de segurança da seção 5 do documento 05
+pnpm verificacao:registrar  # registra os resultados como achados do projeto VulnCase
+```
+
+## Pilha
+
+- Back-end: Hono sobre Node.js 24 LTS, TypeScript, Drizzle ORM, PostgreSQL 17, Argon2id, pino, pdfkit
+- Front-end: React com TypeScript, Vite, TanStack Query, React Hook Form e Recharts
+- Validação: esquemas Zod compartilhados entre front-end e back-end
+- Testes: Vitest, Testcontainers e Playwright
 - Organização: monorepositório com *workspaces* do pnpm
-- Ambiente: Docker Compose
+- Ambiente: Docker Compose com Caddy (HTTPS local)
+
+## Convenções
+
+- *Branches*: `tipo/numero-da-issue-descricao`, por exemplo `feat/29-api-evidencias` ou `docs/37-revisao-documentacao`.
+- *Commits*: [Conventional Commits](https://www.conventionalcommits.org/) em português (`feat`, `fix`, `test`, `docs`, `build`, `ci`, `chore`), com `Closes #N` para fechar a issue.
 
 ## Estrutura do repositório
 
 ```
 vulncase/
-├── docs/            documentação do projeto
+├── docs/            documentação do projeto, evidências de aceite e de verificação
+├── scripts/         roteiros de aceite e de verificação de segurança (Playwright)
+├── docker/          configuração do Caddy que serve o front-end
 ├── src/
 │   ├── backend/        API Hono
 │   ├── frontend/       aplicação React

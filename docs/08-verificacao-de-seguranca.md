@@ -12,6 +12,10 @@ Execução dos testes da [seção 5 do documento 05](05-modelo-de-ameacas.md#5-v
 
 ## 1. Testes do documento 05
 
+A Tabela 1 apresenta o resultado dos cinco testes automatizados.
+
+**Tabela 1 — Testes da seção 5 do documento 05**
+
 | # | Teste | Resultado | Evidência |
 |:-:|---|:-:|---|
 | T1 | XSS armazenado nos campos de texto | Aprovado | Cargas em título, descrição, impacto, passos, correção, localização, comentário, nome e descrição do projeto e ativo: 5 variações.<br>Páginas visitadas: /, /projetos, /projetos/78799de7-0486-4efd-9a82-767cb860e083, /achados?projetoId=78799de7-0486-4efd-9a82-767cb860e083, /achados/6cb66017-39f3-4b8e-ad0e-41e994bc2004, /achados/6cb66017-39f3-4b8e-ad0e-41e994bc2004/editar.<br>Diálogos JavaScript disparados: 0; elementos injetados: nenhum.<br>Título exibido literalmente: "<script>alert('xss-script')</script>".<br>CSP da aplicação: default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; font-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'. |
@@ -24,7 +28,9 @@ Resultados completos em [`verificacao/resultados.json`](verificacao/resultados.j
 
 ## 2. OWASP ZAP em modo passivo
 
-Comando: `docker run --network host -v $PWD/zap:/zap/wrk zaproxy/zap-stable zap-baseline.py -t https://localhost -r zap.html -J zap.json -I -m 3`.
+A Tabela 2 compara as duas execuções do OWASP *Zed Attack Proxy* (ZAP) em modo passivo (*baseline*). Comando: `docker run --network host -v $PWD/zap:/zap/wrk zaproxy/zap-stable zap-baseline.py -t https://localhost -r zap.html -J zap.json -I -m 3`.
+
+**Tabela 2 — Execuções do OWASP ZAP**
 
 | Execução | Falhas | Alertas | Aprovadas |
 |---|:-:|:-:|:-:|
@@ -37,6 +43,10 @@ A primeira tentativa falhou no *handshake* TLS: o cliente Java do ZAP não envia
 
 ## 3. Dependências e segredos
 
+A Tabela 3 resume a verificação de dependências e de segredos versionados.
+
+**Tabela 3 — Dependências e segredos**
+
 | Verificação | Resultado |
 |---|---|
 | `pnpm audit --prod` | Nenhuma vulnerabilidade conhecida. |
@@ -44,6 +54,10 @@ A primeira tentativa falhou no *handshake* TLS: o cliente Java do ZAP não envia
 | `gitleaks` 8.28 (histórico e diretório) | Nenhum segredo encontrado. |
 
 ## 4. Achados registrados no projeto VulnCase
+
+A Tabela 4 lista os achados registrados no projeto `VULN`, e a Figura 1 mostra a mesma lista na ferramenta.
+
+**Tabela 4 — Achados do projeto VulnCase**
 
 | Código | Achado | Severidade | Situação |
 |---|---|---|---|
@@ -65,6 +79,8 @@ A primeira tentativa falhou no *handshake* TLS: o cliente Java do ZAP não envia
 Os testes sem vulnerabilidade foram encerrados como "Falso positivo" porque a suspeita testada não se confirmou; a justificativa de cada um descreve o controle verificado. Os problemas reais seguiram o fluxo completo (atribuição, correção, verificação e encerramento), com o histórico preservado na ferramenta. Nenhum risco precisou ser aceito.
 
 ![Achados do projeto VulnCase](verificacao/vuln-achados.jpg)
+
+*Figura 1 — Achados do projeto VulnCase na ferramenta, ordenados por severidade.*
 
 ## 5. Como repetir
 
