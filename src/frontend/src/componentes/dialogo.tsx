@@ -1,28 +1,18 @@
-import { useEffect, useRef, type ReactNode } from 'react'
-
-interface PropsDialogo {
-  aberto: boolean
-  titulo: string
-  aoFechar: () => void
-  children: ReactNode
-}
-
-/** Diálogo modal nativo (<dialog>), com foco preso e fechamento por Esc. */
-export function Dialogo({ aberto, titulo, aoFechar, children }: PropsDialogo) {
-  const ref = useRef<HTMLDialogElement>(null)
-  useEffect(() => {
-    const d = ref.current
-    if (!d) return
-    if (aberto && !d.open) d.showModal()
-    if (!aberto && d.open) d.close()
-  }, [aberto])
-  return (
-    <dialog ref={ref} className="dialogo" onClose={aoFechar} aria-label={titulo}>
-      <h2>{titulo}</h2>
-      {aberto && children}
-    </dialog>
-  )
-}
+import type { ReactNode } from 'react'
+import { CircleAlertIcon } from 'lucide-react'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/componentes/ui/alert-dialog'
+import { Alert, AlertDescription } from '@/componentes/ui/alert'
+import { buttonVariants } from '@/componentes/ui/button'
+import { Spinner } from '@/componentes/ui/spinner'
 
 interface PropsConfirmar {
   aberto: boolean
@@ -36,28 +26,39 @@ interface PropsConfirmar {
   aoCancelar: () => void
 }
 
+/** Confirmação de ação com consequência (AlertDialog do shadcn/ui). */
 export function DialogoConfirmacao(p: PropsConfirmar) {
   return (
-    <Dialogo aberto={p.aberto} titulo={p.titulo} aoFechar={p.aoCancelar}>
-      {p.erro && (
-        <div className="alerta alerta--erro" role="alert">
-          {p.erro}
-        </div>
-      )}
-      <p>{p.mensagem}</p>
-      <div className="dialogo__acoes">
-        <button type="button" className="botao" onClick={p.aoCancelar} disabled={p.ocupado}>
-          Cancelar
-        </button>
-        <button
-          type="button"
-          className={p.perigo ? 'botao botao--perigo' : 'botao botao--primario'}
-          onClick={p.aoConfirmar}
-          disabled={p.ocupado}
-        >
-          {p.rotuloConfirmar}
-        </button>
-      </div>
-    </Dialogo>
+    <AlertDialog open={p.aberto} onOpenChange={(aberto) => !aberto && !p.ocupado && p.aoCancelar()}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>{p.titulo}</AlertDialogTitle>
+          <AlertDialogDescription asChild>
+            <div className="text-sm text-muted-foreground">{p.mensagem}</div>
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        {p.erro && (
+          <Alert variant="destructive">
+            <CircleAlertIcon />
+            <AlertDescription>{p.erro}</AlertDescription>
+          </Alert>
+        )}
+        <AlertDialogFooter>
+          <AlertDialogCancel disabled={p.ocupado}>Cancelar</AlertDialogCancel>
+          <AlertDialogAction
+            className={p.perigo ? buttonVariants({ variant: 'destructive' }) : undefined}
+            disabled={p.ocupado}
+            onClick={(e) => {
+              // Mantém o diálogo aberto até a operação terminar (o erro aparece aqui).
+              e.preventDefault()
+              p.aoConfirmar()
+            }}
+          >
+            {p.ocupado && <Spinner />}
+            {p.rotuloConfirmar}
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   )
 }

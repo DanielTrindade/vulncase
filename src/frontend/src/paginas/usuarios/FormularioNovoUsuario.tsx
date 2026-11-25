@@ -1,11 +1,18 @@
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
+import { CircleAlertIcon } from 'lucide-react'
 import { esquemaCriarUsuario, PAPEIS, ROTULOS_PAPEL, SENHA_MINIMO } from '@vulncase/compartilhado'
 import type { z } from 'zod'
-import { useCriarUsuario } from '../../api/usuarios'
-import { Campo } from '../../componentes/campo'
-import { aplicarErrosApi } from '../../componentes/formulario'
+import { useCriarUsuario } from '@/api/usuarios'
+import { Campo } from '@/componentes/campo'
+import { aplicarErrosApi } from '@/componentes/formulario'
+import { Alert, AlertDescription } from '@/componentes/ui/alert'
+import { Button } from '@/componentes/ui/button'
+import { DialogFooter } from '@/componentes/ui/dialog'
+import { Input } from '@/componentes/ui/input'
+import { NativeSelect, NativeSelectOption } from '@/componentes/ui/native-select'
+import { Spinner } from '@/componentes/ui/spinner'
 
 type Formulario = z.input<typeof esquemaCriarUsuario>
 const CAMPOS = ['nome', 'email', 'papel', 'senha'] as const
@@ -40,48 +47,45 @@ export function FormularioNovoUsuario({
   })
 
   return (
-    <form className="cartao formulario" onSubmit={(e) => void aoEnviar(e)} noValidate>
-      <h2>Novo usuário</h2>
+    <form className="grid gap-5" onSubmit={(e) => void aoEnviar(e)} noValidate>
       {erroGeral && (
-        <div className="alerta alerta--erro" role="alert">
-          {erroGeral}
-        </div>
+        <Alert variant="destructive">
+          <CircleAlertIcon />
+          <AlertDescription>{erroGeral}</AlertDescription>
+        </Alert>
       )}
-      <div className="linha-campos">
-        <Campo rotulo="Nome" erro={errors.nome?.message} obrigatorio>
-          <input autoComplete="off" {...register('nome')} />
-        </Campo>
-        <Campo rotulo="E-mail" erro={errors.email?.message} obrigatorio>
-          <input type="email" autoComplete="off" {...register('email')} />
-        </Campo>
-      </div>
-      <div className="linha-campos">
-        <Campo rotulo="Papel" erro={errors.papel?.message} obrigatorio>
-          <select {...register('papel')}>
-            {PAPEIS.map((p) => (
-              <option key={p} value={p}>
-                {ROTULOS_PAPEL[p]}
-              </option>
-            ))}
-          </select>
-        </Campo>
-        <Campo
-          rotulo="Senha inicial"
-          erro={errors.senha?.message}
-          ajuda={`Mínimo de ${SENHA_MINIMO} caracteres. Informe-a ao usuário por um canal seguro.`}
-          obrigatorio
-        >
-          <input type="password" autoComplete="new-password" {...register('senha')} />
-        </Campo>
-      </div>
-      <div className="acoes">
-        <button type="submit" className="botao botao--primario" disabled={criar.isPending}>
-          {criar.isPending ? 'Cadastrando…' : 'Cadastrar'}
-        </button>
-        <button type="button" className="botao" onClick={aoCancelar}>
+      <Campo rotulo="Nome" erro={errors.nome?.message} obrigatorio>
+        <Input autoComplete="off" {...register('nome')} />
+      </Campo>
+      <Campo rotulo="E-mail" erro={errors.email?.message} obrigatorio>
+        <Input type="email" autoComplete="off" {...register('email')} />
+      </Campo>
+      <Campo rotulo="Papel" erro={errors.papel?.message} obrigatorio>
+        <NativeSelect {...register('papel')}>
+          {PAPEIS.map((p) => (
+            <NativeSelectOption key={p} value={p}>
+              {ROTULOS_PAPEL[p]}
+            </NativeSelectOption>
+          ))}
+        </NativeSelect>
+      </Campo>
+      <Campo
+        rotulo="Senha inicial"
+        erro={errors.senha?.message}
+        ajuda={`Mínimo de ${SENHA_MINIMO} caracteres. Informe-a por um canal seguro.`}
+        obrigatorio
+      >
+        <Input type="password" autoComplete="new-password" {...register('senha')} />
+      </Campo>
+      <DialogFooter>
+        <Button type="button" variant="outline" onClick={aoCancelar}>
           Cancelar
-        </button>
-      </div>
+        </Button>
+        <Button type="submit" disabled={criar.isPending}>
+          {criar.isPending && <Spinner />}
+          Cadastrar usuário
+        </Button>
+      </DialogFooter>
     </form>
   )
 }

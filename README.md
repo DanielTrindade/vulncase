@@ -18,6 +18,7 @@ O VulnCase centraliza os achados de segurança de um projeto em um único fluxo:
 | [06 — Plano de entregas](docs/06-plano-de-entregas.md) | Entregas incrementais, backlog por entrega e roteiro de demonstração |
 | [07 — Critérios de aceite](docs/07-criterios-de-aceite.md) | Execução do roteiro de aceite do MVP, com capturas de tela |
 | [08 — Verificação de segurança](docs/08-verificacao-de-seguranca.md) | Testes de segurança da própria ferramenta, OWASP ZAP, dependências e segredos |
+| [09 — Design da interface](docs/09-design-da-interface.md) | Sistema visual, componentes shadcn/ui, movimento e compatibilidade com a CSP |
 
 ## Como executar
 
@@ -86,7 +87,7 @@ pnpm verificacao:registrar  # registra os resultados como achados do projeto Vul
 ## Pilha
 
 - Back-end: Hono sobre Node.js 24 LTS, TypeScript, Drizzle ORM, PostgreSQL 17, Argon2id, pino, pdfkit
-- Front-end: React com TypeScript, Vite, TanStack Query, React Hook Form e Recharts
+- Front-end: React com TypeScript, Vite, TanStack Query, React Hook Form, shadcn/ui e Tailwind CSS
 - Validação: esquemas Zod compartilhados entre front-end e back-end
 - Testes: Vitest, Testcontainers e Playwright
 - Organização: monorepositório com *workspaces* do pnpm

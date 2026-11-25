@@ -1,16 +1,25 @@
-import { useRef, useState, type FormEvent } from 'react'
-import { ErroApi, mensagemDeErro } from '../../api/cliente'
+import { useRef, useState, type DragEvent, type FormEvent } from 'react'
+import { toast } from 'sonner'
+import { CircleAlertIcon, FileIcon, Trash2Icon, UploadIcon } from 'lucide-react'
+import { ErroApi, mensagemDeErro } from '@/api/cliente'
 import {
   useEnviarEvidencia,
   useEvidencias,
   useRemoverEvidencia,
   type Achado,
   type Evidencia,
-} from '../../api/achados'
-import { useSessao, useUsuario } from '../../auth/sessao'
-import { formatarDataHora } from '../../componentes/datas'
-import { DialogoConfirmacao } from '../../componentes/dialogo'
-import { Carregando, MensagemErro, Vazio } from '../../componentes/estado'
+} from '@/api/achados'
+import { useSessao, useUsuario } from '@/auth/sessao'
+import { formatarDataHora } from '@/componentes/datas'
+import { DialogoConfirmacao } from '@/componentes/dialogo'
+import { Carregando, MensagemErro } from '@/componentes/estado'
+import { Alert, AlertDescription } from '@/componentes/ui/alert'
+import { Button } from '@/componentes/ui/button'
+import { Input } from '@/componentes/ui/input'
+import { Label } from '@/componentes/ui/label'
+import { Spinner } from '@/componentes/ui/spinner'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/componentes/ui/tooltip'
+import { cn } from '@/lib/utils'
 
 const TAMANHO_MAXIMO = 5 * 1024 * 1024
 const EXTENSOES = '.png,.jpg,.jpeg,.pdf,.txt,.pcap,.pcapng'
@@ -23,7 +32,7 @@ function formatarTamanho(bytes: number): string {
 
 function mensagemEnvio(err: unknown): string {
   if (err instanceof ErroApi) {
-    if (err.status === 413) return 'O arquivo excede o limite de 5 MB.'
+    if (err.status === 413) return 'O arquivo passa do limite de 5 MB.'
     if (err.status === 415) return `Tipo de arquivo não permitido. ${err.message}`
   }
   return mensagemDeErro(err)
@@ -40,14 +49,27 @@ function FormularioEnvio({ achadoId }: { achadoId: string }) {
   const [arquivo, setArquivo] = useState<File | null>(null)
   const [descricao, setDescricao] = useState('')
   const [erro, setErro] = useState<string | null>(null)
+  const [arrastando, setArrastando] = useState(false)
+
+  function escolher(f: File | null) {
+    setErro(null)
+    setArquivo(f)
+  }
+
+  function aoSoltar(e: DragEvent) {
+    e.preventDefault()
+    setArrastando(false)
+    escolher(e.dataTransfer.files[0] ?? null)
+  }
 
   async function aoEnviar(e: FormEvent) {
     e.preventDefault()
     setErro(null)
     if (!arquivo) return setErro('Escolha um arquivo.')
-    if (arquivo.size > TAMANHO_MAXIMO) return setErro('O arquivo excede o limite de 5 MB.')
+    if (arquivo.size > TAMANHO_MAXIMO) return setErro('O arquivo passa do limite de 5 MB.')
     try {
       await enviar.mutateAsync({ arquivo, descricao })
+      toast.success(`Evidência ${arquivo.name} anexada`)
       setArquivo(null)
       setDescricao('')
       if (entrada.current) entrada.current.value = ''
@@ -57,32 +79,67 @@ function FormularioEnvio({ achadoId }: { achadoId: string }) {
   }
 
   return (
-    <form className="envio-evidencia" onSubmit={(e) => void aoEnviar(e)}>
+    <form
+      className="envio-evidencia mt-4 grid gap-3 border-t pt-4"
+      onSubmit={(e) => void aoEnviar(e)}
+    >
       {erro && (
-        <div className="alerta alerta--erro" role="alert">
-          {erro}
-        </div>
+        <Alert variant="destructive">
+          <CircleAlertIcon />
+          <AlertDescription>{erro}</AlertDescription>
+        </Alert>
       )}
-      <div className="linha-campos">
-        <label className="campo">
-          <span className="campo__rotulo">Arquivo</span>
-          <input
-            ref={entrada}
-            type="file"
-            accept={EXTENSOES}
-            onChange={(e) => setArquivo(e.target.files?.[0] ?? null)}
+      <label
+        onDragOver={(e) => {
+          e.preventDefault()
+          setArrastando(true)
+        }}
+        onDragLeave={() => setArrastando(false)}
+        onDrop={aoSoltar}
+        className={cn(
+          'flex cursor-pointer flex-col items-center gap-1 rounded-md border border-dashed px-4 py-5 text-center text-sm transition-colors duration-150 has-[:focus-visible]:ring-[3px] has-[:focus-visible]:ring-ring/50',
+          arrastando ? 'border-primary bg-primary/5' : 'hover:bg-muted/60',
+        )}
+      >
+        <UploadIcon className="size-5 text-muted-foreground" />
+        {arquivo ? (
+          <span className="font-medium">
+            {arquivo.name}{' '}
+            <span className="font-normal text-muted-foreground">
+              ({formatarTamanho(arquivo.size)})
+            </span>
+          </span>
+        ) : (
+          <span>
+            <span className="font-medium text-primary">Escolha um arquivo</span> ou arraste para cá
+          </span>
+        )}
+        <span className="text-xs text-muted-foreground">
+          PNG, JPG, PDF, TXT, PCAP ou PCAPNG, até 5 MB
+        </span>
+        <input
+          ref={entrada}
+          type="file"
+          accept={EXTENSOES}
+          aria-label="Arquivo de evidência"
+          className="sr-only"
+          onChange={(e) => escolher(e.target.files?.[0] ?? null)}
+        />
+      </label>
+      <div className="flex flex-wrap items-end gap-3">
+        <div className="grid min-w-[220px] flex-1 gap-1.5">
+          <Label htmlFor="descricao-evidencia">Descrição (opcional)</Label>
+          <Input
+            id="descricao-evidencia"
+            maxLength={500}
+            value={descricao}
+            onChange={(e) => setDescricao(e.target.value)}
           />
-          <span className="campo__ajuda">PNG, JPG, PDF, TXT, PCAP ou PCAPNG, até 5 MB.</span>
-        </label>
-        <label className="campo">
-          <span className="campo__rotulo">Descrição (opcional)</span>
-          <input maxLength={500} value={descricao} onChange={(e) => setDescricao(e.target.value)} />
-        </label>
-      </div>
-      <div className="acoes">
-        <button type="submit" className="botao" disabled={!arquivo || enviar.isPending}>
-          {enviar.isPending ? 'Enviando…' : 'Anexar evidência'}
-        </button>
+        </div>
+        <Button type="submit" disabled={!arquivo || enviar.isPending}>
+          {enviar.isPending && <Spinner />}
+          Anexar evidência
+        </Button>
       </div>
     </form>
   )
@@ -100,49 +157,74 @@ export function Evidencias({ achado }: { achado: Achado }) {
     aberto && (temPapel('Analista', 'Administrador') || e.enviadaPor.id === eu.id)
 
   return (
-    <div className="cartao">
-      <h2>Evidências</h2>
+    <section className="rounded-lg border bg-card p-5 md:p-6">
+      <h2 className="mb-4 text-base font-semibold">Evidências</h2>
       {evidencias.isPending ? (
         <Carregando />
       ) : evidencias.isError ? (
         <MensagemErro erro={evidencias.error} />
       ) : evidencias.data.length === 0 ? (
-        <Vazio>Nenhuma evidência anexada.</Vazio>
+        <p className="text-sm text-muted-foreground">Nenhuma evidência anexada.</p>
       ) : (
-        <ul className="evidencias">
+        <ul className="grid gap-2">
           {evidencias.data.map((e) => {
             const url = `/api/evidencias/${e.id}/download`
             return (
-              <li key={e.id} className="evidencia">
-                {ehImagem(e) && (
-                  <a href={url} className="evidencia__miniatura" title="Baixar imagem">
-                    <img src={url} alt={e.descricao ?? e.nomeOriginal} loading="lazy" />
+              <li key={e.id} className="evidencia flex items-start gap-3 rounded-md border p-3">
+                {ehImagem(e) ? (
+                  <a
+                    href={url}
+                    className="shrink-0 overflow-hidden rounded-sm border"
+                    title="Baixar imagem"
+                  >
+                    <img
+                      src={url}
+                      alt={e.descricao ?? e.nomeOriginal}
+                      loading="lazy"
+                      className="size-16 object-cover"
+                    />
                   </a>
+                ) : (
+                  <span className="flex size-16 shrink-0 items-center justify-center rounded-sm border bg-muted text-muted-foreground">
+                    <FileIcon className="size-5" />
+                  </span>
                 )}
-                <div className="evidencia__dados">
-                  <a href={url} className="evidencia__nome">
+                <div className="min-w-0 flex-1">
+                  <a
+                    href={url}
+                    className="block truncate text-sm font-medium text-primary hover:underline"
+                  >
                     {e.nomeOriginal}
                   </a>
-                  {e.descricao && <span className="texto-pre">{e.descricao}</span>}
-                  <span className="texto-suave evidencia__meta">
-                    {formatarTamanho(e.tamanhoBytes)} · {e.enviadaPor.nome} ·{' '}
+                  {e.descricao && <p className="texto-pre text-sm">{e.descricao}</p>}
+                  <p className="mt-0.5 text-xs text-muted-foreground">
+                    {formatarTamanho(e.tamanhoBytes)}, enviada por {e.enviadaPor.nome} em{' '}
                     {formatarDataHora(e.enviadaEm)}
-                  </span>
-                  <code className="evidencia__hash" title="SHA-256">
+                  </p>
+                  <p
+                    className="mt-0.5 truncate font-mono text-[11px] text-muted-foreground"
+                    title={e.hashSha256}
+                  >
                     SHA-256 {e.hashSha256}
-                  </code>
+                  </p>
                 </div>
                 {podeRemover(e) && (
-                  <button
-                    type="button"
-                    className="botao botao--perigo botao--pequeno"
-                    onClick={() => {
-                      remover.reset()
-                      setAlvo(e)
-                    }}
-                  >
-                    Remover
-                  </button>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon-sm"
+                        aria-label={`Remover ${e.nomeOriginal}`}
+                        onClick={() => {
+                          remover.reset()
+                          setAlvo(e)
+                        }}
+                      >
+                        <Trash2Icon />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>Remover</TooltipContent>
+                  </Tooltip>
                 )}
               </li>
             )
@@ -154,20 +236,28 @@ export function Evidencias({ achado }: { achado: Achado }) {
 
       <DialogoConfirmacao
         aberto={alvo !== null}
-        titulo="Remover evidência"
+        titulo="Remover evidência?"
         mensagem={
           <>
-            A evidência <strong>{alvo?.nomeOriginal}</strong> será excluída. A remoção fica
-            registrada no histórico.
+            <span className="font-medium text-foreground">{alvo?.nomeOriginal}</span> será excluída.
+            A remoção fica registrada no histórico.
           </>
         }
-        rotuloConfirmar="Remover"
+        rotuloConfirmar="Remover evidência"
         perigo
         ocupado={remover.isPending}
         erro={remover.isError ? mensagemDeErro(remover.error) : null}
-        aoConfirmar={() => alvo && remover.mutate(alvo.id, { onSuccess: () => setAlvo(null) })}
+        aoConfirmar={() =>
+          alvo &&
+          remover.mutate(alvo.id, {
+            onSuccess: () => {
+              toast.success('Evidência removida')
+              setAlvo(null)
+            },
+          })
+        }
         aoCancelar={() => setAlvo(null)}
       />
-    </div>
+    </section>
   )
 }

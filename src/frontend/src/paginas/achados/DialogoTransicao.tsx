@@ -1,8 +1,23 @@
 import { useState, type FormEvent } from 'react'
-import { ROTULOS_STATUS, type StatusAchado } from '@vulncase/compartilhado'
-import { ErroApi, mensagemDeErro } from '../../api/cliente'
-import { useTransicionar, type Achado } from '../../api/achados'
-import { Dialogo } from '../../componentes/dialogo'
+import { toast } from 'sonner'
+import { ArrowRightIcon, CircleAlertIcon } from 'lucide-react'
+import type { StatusAchado } from '@vulncase/compartilhado'
+import { ErroApi, mensagemDeErro } from '@/api/cliente'
+import { useTransicionar, type Achado } from '@/api/achados'
+import { SeloStatus } from '@/componentes/selos'
+import { Alert, AlertDescription } from '@/componentes/ui/alert'
+import { Button } from '@/componentes/ui/button'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/componentes/ui/dialog'
+import { Field, FieldDescription, FieldLabel } from '@/componentes/ui/field'
+import { Spinner } from '@/componentes/ui/spinner'
+import { Textarea } from '@/componentes/ui/textarea'
 
 type Acao = Achado['acoes']['transicoes'][number]
 
@@ -30,7 +45,7 @@ export function DialogoTransicao({ achado, acao, aoFechar, aoConflito }: Props) 
     e.preventDefault()
     if (!acao) return
     if (acao.exigeJustificativa && !justificativa.trim()) {
-      setErro('Informe a justificativa.')
+      setErro('Escreva a justificativa para continuar.')
       return
     }
     setErro(null)
@@ -43,6 +58,7 @@ export function DialogoTransicao({ achado, acao, aoFechar, aoConflito }: Props) 
           versao: achado.versao,
         },
       })
+      toast.success(`${achado.codigo}: ${acao.rotulo.toLowerCase()}`)
       fechar()
     } catch (err) {
       if (
@@ -63,50 +79,67 @@ export function DialogoTransicao({ achado, acao, aoFechar, aoConflito }: Props) 
   }
 
   return (
-    <Dialogo aberto={acao !== null} titulo={acao?.rotulo ?? ''} aoFechar={fechar}>
-      <form onSubmit={(e) => void aoEnviar(e)} className="formulario">
-        <p>
-          <span className="mono">{achado.codigo}</span> passará de{' '}
-          <strong>{ROTULOS_STATUS[achado.status]}</strong> para{' '}
-          <strong>{acao && ROTULOS_STATUS[acao.destino as StatusAchado]}</strong>.
-        </p>
-        {erro && (
-          <div className="alerta alerta--erro" role="alert">
-            {erro}
-          </div>
-        )}
-        <label className="campo">
-          <span className="campo__rotulo">
-            Justificativa
-            {acao?.exigeJustificativa ? (
-              <span className="campo__obrigatorio">*</span>
-            ) : (
-              ' (opcional)'
-            )}
-          </span>
-          <textarea
-            rows={4}
-            maxLength={4000}
-            value={justificativa}
-            onChange={(e) => setJustificativa(e.target.value)}
-            aria-invalid={erro ? true : undefined}
-            autoFocus
-          />
-        </label>
-        <div className="dialogo__acoes">
-          <button
-            type="button"
-            className="botao"
-            onClick={fechar}
-            disabled={transicionar.isPending}
-          >
-            Cancelar
-          </button>
-          <button type="submit" className="botao botao--primario" disabled={transicionar.isPending}>
-            {transicionar.isPending ? 'Salvando…' : 'Confirmar'}
-          </button>
-        </div>
-      </form>
-    </Dialogo>
+    <Dialog
+      open={acao !== null}
+      onOpenChange={(aberto) => !aberto && !transicionar.isPending && fechar()}
+    >
+      <DialogContent className="sm:max-w-lg">
+        <form onSubmit={(e) => void aoEnviar(e)} className="grid gap-5">
+          <DialogHeader>
+            <DialogTitle>{acao?.rotulo}</DialogTitle>
+            <DialogDescription asChild>
+              <div className="flex flex-wrap items-center gap-2 pt-1">
+                <span className="font-mono text-foreground">{achado.codigo}</span>
+                <SeloStatus status={achado.status} />
+                <ArrowRightIcon className="size-4" aria-label="para" />
+                {acao && <SeloStatus status={acao.destino as StatusAchado} />}
+              </div>
+            </DialogDescription>
+          </DialogHeader>
+          {erro && (
+            <Alert variant="destructive">
+              <CircleAlertIcon />
+              <AlertDescription>{erro}</AlertDescription>
+            </Alert>
+          )}
+          <Field data-invalid={erro && acao?.exigeJustificativa ? true : undefined}>
+            <FieldLabel htmlFor="justificativa">
+              Justificativa
+              {acao?.exigeJustificativa ? (
+                <span aria-hidden className="text-destructive">
+                  *
+                </span>
+              ) : (
+                <span className="font-normal text-muted-foreground">(opcional)</span>
+              )}
+            </FieldLabel>
+            <Textarea
+              id="justificativa"
+              rows={4}
+              maxLength={4000}
+              value={justificativa}
+              onChange={(e) => setJustificativa(e.target.value)}
+              aria-invalid={erro && acao?.exigeJustificativa ? true : undefined}
+              autoFocus
+            />
+            <FieldDescription>Fica registrada no histórico do achado.</FieldDescription>
+          </Field>
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={fechar}
+              disabled={transicionar.isPending}
+            >
+              Cancelar
+            </Button>
+            <Button type="submit" disabled={transicionar.isPending}>
+              {transicionar.isPending && <Spinner />}
+              Confirmar
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
   )
 }

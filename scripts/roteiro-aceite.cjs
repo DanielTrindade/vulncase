@@ -32,39 +32,46 @@ async function entrar(p, email, senha) {
   await p.waitForURL(BASE + '/')
 }
 async function cadastrarUsuario(p, nome, email, papel) {
-  await p.click('text=Novo usuário')
-  await p.getByLabel('Nome').fill(nome)
-  await p.getByLabel('E-mail').fill(email)
-  await p.locator('form select[name=papel]').selectOption(papel)
-  await p.getByLabel('Senha inicial').fill('senha-inicial-123')
-  await p.click('button:has-text("Cadastrar")')
-  await p.waitForSelector(`text=Usuário ${nome} cadastrado.`)
+  await p.getByRole('button', { name: 'Novo usuário' }).click()
+  const d = p.getByRole('dialog')
+  await d.getByLabel(/^Nome/).fill(nome)
+  await d.getByLabel(/^E-mail/).fill(email)
+  await d.locator('select[name=papel]').selectOption(papel)
+  await d.getByLabel('Senha inicial').fill('senha-inicial-123')
+  await d.getByRole('button', { name: 'Cadastrar usuário' }).click()
+  await p.getByText(`Usuário ${nome} cadastrado`).waitFor()
+  await d.waitFor({ state: 'hidden' })
 }
 async function registrar(p, projetoId, a) {
   await p.goto(`${BASE}/projetos/${projetoId}/achados/novo`)
-  await p.getByLabel('Título').fill(a.titulo)
+  await p.getByLabel(/^Título/).fill(a.titulo)
   await p.getByLabel('Origem').selectOption(a.origem)
   await p.getByLabel('Severidade').selectOption(a.severidade)
   await p.getByLabel('Localização').fill(a.localizacao)
   await p.getByLabel('Categoria OWASP Top 10').selectOption(String(a.owasp))
   await p.getByLabel('CWE').fill(String(a.cwe))
-  await p.getByLabel('Descrição').fill(a.descricao)
+  await p.getByLabel(/^Descrição/).fill(a.descricao)
   await p.getByLabel('Correção proposta').fill(a.correcao)
   await p.click('button:has-text("Registrar achado")')
   await p.waitForURL(/\/achados\/[0-9a-f-]{36}$/)
   await p.waitForSelector('h1.titulo-achado')
   return {
     id: p.url().split('/').pop(),
-    codigo: (await p.textContent('.cabecalho-pagina__sub .mono')).trim(),
+    codigo: (await p.textContent('[data-testid=codigo-achado]')).trim(),
   }
 }
 async function transicionar(p, id, rotulo, justificativa) {
   await p.goto(`${BASE}/achados/${id}`)
-  await p.click(`.cabecalho-pagina button:has-text("${rotulo}")`)
-  if (justificativa) await p.locator('dialog textarea').fill(justificativa)
-  await p.click('dialog button:has-text("Confirmar")')
-  await p.waitForSelector('dialog', { state: 'hidden' })
+  await p.click(`[data-testid=acoes-achado] button:has-text("${rotulo}")`)
+  const d = p.getByRole('dialog')
+  if (justificativa) await d.locator('textarea').fill(justificativa)
+  await d.getByRole('button', { name: 'Confirmar' }).click()
+  await d.waitFor({ state: 'hidden' })
 }
+const MENU = 'nav[aria-label="Navegação principal"] a'
+const ACOES = '[data-testid=acoes-achado] button, [data-testid=acoes-achado] a'
+/** Selo de status no cabeçalho do achado. */
+const status = (s) => `header [data-status=${s}]`
 const ACHADOS = [
   {
     titulo: 'Credenciais em texto claro via Telnet',
@@ -125,7 +132,7 @@ const ACHADOS = [
   // 1
   const adm = await (await novoContexto(b)).newPage()
   await entrar(adm, 'admin@vulncase.local', 'admin-senha-inicial-123')
-  await adm.click('.menu__item:has-text("Usuários")')
+  await adm.click(`${MENU}:has-text("Usuários")`)
   await cadastrarUsuario(adm, 'Ana Analista', 'ana@lab.local', 'Analista')
   await cadastrarUsuario(adm, 'Davi Desenvolvedor', 'davi@lab.local', 'Desenvolvedor')
   await foto(adm, '01-usuarios-cadastrados')
@@ -139,12 +146,12 @@ const ACHADOS = [
   // 2
   const ana = await (await novoContexto(b)).newPage()
   await entrar(ana, 'ana@lab.local', 'senha-inicial-123')
-  await ana.click('.menu__item:has-text("Projetos")')
-  await ana.click('text=Novo projeto')
-  await ana.getByLabel('Prefixo').fill('LAB')
-  await ana.getByLabel('Nome').fill('Laboratório integrado')
-  await ana.getByLabel('Descrição').fill('Achados de rede, aplicação web e revisão de código.')
-  await ana.click('button:has-text("Salvar")')
+  await ana.click(`${MENU}:has-text("Projetos")`)
+  await ana.getByRole('link', { name: 'Novo projeto' }).click()
+  await ana.getByLabel(/^Prefixo/).fill('LAB')
+  await ana.getByLabel(/^Nome/).fill('Laboratório integrado')
+  await ana.getByLabel(/^Descrição/).fill('Achados de rede, aplicação web e revisão de código.')
+  await ana.getByRole('button', { name: 'Criar projeto' }).click()
   await ana.waitForURL(/\/projetos\/[0-9a-f-]{36}$/)
   const projetoId = ana.url().split('/').pop()
   const reg = []
@@ -161,11 +168,12 @@ const ACHADOS = [
   // 3
   for (const r of [reg[0], reg[2]]) {
     await ana.goto(`${BASE}/achados/${r.id}`)
-    await ana.getByLabel('Responsável').selectOption({ label: 'Davi Desenvolvedor' })
-    await ana.click('button:has-text("Atribuir")')
-    await ana.waitForSelector('.cabecalho-pagina button:has-text("Iniciar correção")')
+    await ana.getByRole('combobox', { name: 'Responsável' }).click()
+    await ana.getByRole('option', { name: 'Davi Desenvolvedor' }).click()
+    await ana.getByText('Atribuído a Davi Desenvolvedor').first().waitFor()
+    await ana.waitForSelector('[data-testid=acoes-achado] button:has-text("Iniciar correção")')
     await transicionar(ana, r.id, 'Iniciar correção')
-    await ana.waitForSelector('.selo--EmCorrecao')
+    await ana.waitForSelector(status('EmCorrecao'))
   }
   await ana.goto(`${BASE}/achados?projetoId=${projetoId}&status=EmCorrecao`)
   await ana.waitForSelector('tbody tr')
@@ -179,39 +187,33 @@ const ACHADOS = [
   // 4
   const davi = await (await novoContexto(b)).newPage()
   await entrar(davi, 'davi@lab.local', 'senha-inicial-123')
-  const menu = (await davi.locator('.menu__item').allTextContents()).join(',')
+  const menu = (await davi.locator(MENU).allTextContents()).join(',')
   await davi.goto(`${BASE}/achados/${reg[1].id}`)
   await davi.waitForSelector('h1.titulo-achado')
-  const acoesOutro = await davi
-    .locator('.cabecalho-pagina > .acoes button, .cabecalho-pagina > .acoes a')
-    .count()
+  const acoesOutro = await davi.locator(ACOES).count()
   await davi.goto(`${BASE}/achados/${reg[0].id}`)
   await davi.waitForSelector('h1.titulo-achado')
-  const acoesProprio = (
-    await davi
-      .locator('.cabecalho-pagina > .acoes button, .cabecalho-pagina > .acoes a')
-      .allTextContents()
-  ).join(',')
+  const acoesProprio = (await davi.locator(ACOES).allTextContents()).join(',')
   await foto(davi, '04a-desenvolvedor-acoes-permitidas')
   await transicionar(davi, reg[0].id, 'Concluir correção', 'Telnet desativado; SSH com chave.')
-  await davi.waitForSelector('.selo--AguardandoVerificacao')
+  await davi.waitForSelector(status('AguardandoVerificacao'))
   await foto(davi, '04b-aguardando-verificacao')
   passo(
     4,
-    menu === 'Painel,Projetos,Achados' && acoesOutro === 0 && acoesProprio === 'Concluir correção',
+    menu === 'Painel,Achados,Projetos' && acoesOutro === 0 && acoesProprio === 'Concluir correção',
     `menu do desenvolvedor: ${menu}; ações em achado não atribuído: ${acoesOutro}; no próprio: ${acoesProprio}; ${reg[0].codigo} movido para Aguardando verificação`,
   )
 
   // 5
   await transicionar(ana, reg[0].id, 'Aprovar verificação')
-  await ana.waitForSelector('.selo--Corrigido')
+  await ana.waitForSelector(status('Corrigido'))
   await transicionar(
     ana,
     reg[1].id,
     'Marcar falso positivo',
     'A porta 5432 só responde à VLAN de gerência; a varredura foi feita de dentro dela.',
   )
-  await ana.waitForSelector('.selo--FalsoPositivo')
+  await ana.waitForSelector(status('FalsoPositivo'))
   await foto(ana, '05-falso-positivo')
   passo(
     5,
@@ -221,8 +223,16 @@ const ACHADOS = [
 
   // 6
   await ana.goto(`${BASE}/projetos/${projetoId}`)
-  await ana.waitForSelector('.recharts-bar-rectangle')
-  const valores = await ana.locator('.indicador__valor').allTextContents()
+  await ana.waitForSelector('[data-segmento]')
+  await ana.waitForTimeout(800) // fim da animação de revelação da faixa
+  const texto = async (sel) => (await ana.locator(sel).first().innerText()).trim()
+  // total, abertos, sem responsável, vencidos
+  const valores = [
+    await texto('[data-testid=total-registrados]'),
+    await texto('[data-testid=total-abertos]'),
+    (await texto('[data-pendencia=sem-responsavel]')).match(/\d+/)[0],
+    (await texto('[data-pendencia=vencidos]')).match(/\d+/)[0],
+  ]
   const painel = await (await ana.request.get(`${BASE}/api/projetos/${projetoId}/painel`)).json()
   const esperadoSev = { Critica: 1, Alta: 1, Media: 2, Baixa: 1, Informativa: 0 }
   const esperadoStatus = {
@@ -233,19 +243,25 @@ const ACHADOS = [
     FalsoPositivo: 1,
     RiscoAceito: 0,
   }
-  // tabelas dos gráficos
-  for (const d of await ana.locator('details.grafico__tabela').all())
-    await d.locator('summary').click()
-  const tabelaUi = await ana.locator('details.grafico__tabela tr').allTextContents()
+  // legenda da faixa de severidade (abertos) e etapas do ciclo de correção
+  const legenda = await ana
+    .locator('ul [data-severidade]')
+    .evaluateAll((els) => els.map((e) => e.innerText.replace(/\s+/g, ' ').trim()))
+  const ciclo = await ana
+    .locator('[data-etapa]')
+    .evaluateAll((els) => els.map((e) => `${e.dataset.etapa} ${e.innerText.trim()}`))
+  const tabelaUi = [...legenda, ...ciclo]
   await foto(ana, '06-painel-do-projeto')
   const ok6 =
     JSON.stringify(painel.porSeveridade) === JSON.stringify(esperadoSev) &&
     JSON.stringify(painel.porStatus) === JSON.stringify(esperadoStatus) &&
-    valores.join(',') === '5,3,2,0'
+    valores.join(',') === '5,3,2,0' &&
+    legenda.join(',') === 'Crítica 1,Alta 0,Média 1,Baixa 1,Informativa 0' &&
+    ciclo.join(',') === 'Aberto 2,Em correção 1,Aguardando verificação 0,Encerrados 2'
   passo(
     6,
     ok6,
-    `indicadores ${valores.join(',')} (total, abertos, sem responsável, vencidos); severidade ${JSON.stringify(painel.porSeveridade)}; status ${JSON.stringify(painel.porStatus)}; tabela: ${tabelaUi.join(' | ')}`,
+    `indicadores ${valores.join(',')} (total, abertos, sem responsável, vencidos); severidade ${JSON.stringify(painel.porSeveridade)}; status ${JSON.stringify(painel.porStatus)}; na tela: ${tabelaUi.join(' | ')}`,
   )
 
   // 7

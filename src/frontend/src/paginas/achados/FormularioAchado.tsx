@@ -14,17 +14,21 @@ import {
   type OrigemAchado,
   type Severidade,
 } from '@vulncase/compartilhado'
-import { ErroApi } from '../../api/cliente'
-import {
-  useCategoriasOwasp,
-  useEditarAchado,
-  useRegistrarAchado,
-  type Achado,
-} from '../../api/achados'
-import { useAtivos } from '../../api/projetos'
-import { useResponsaveis } from '../../api/usuarios'
-import { Campo } from '../../componentes/campo'
-import { aplicarErrosApi } from '../../componentes/formulario'
+import { toast } from 'sonner'
+import { CircleAlertIcon, ExternalLinkIcon, RotateCcwIcon } from 'lucide-react'
+import { ErroApi } from '@/api/cliente'
+import { useCategoriasOwasp, useEditarAchado, useRegistrarAchado, type Achado } from '@/api/achados'
+import { useAtivos } from '@/api/projetos'
+import { useResponsaveis } from '@/api/usuarios'
+import { Campo } from '@/componentes/campo'
+import { aplicarErrosApi } from '@/componentes/formulario'
+import { Alert, AlertDescription, AlertTitle } from '@/componentes/ui/alert'
+import { Button } from '@/componentes/ui/button'
+import { Input } from '@/componentes/ui/input'
+import { NativeSelect, NativeSelectOption } from '@/componentes/ui/native-select'
+import { Spinner } from '@/componentes/ui/spinner'
+import { Textarea } from '@/componentes/ui/textarea'
+import type { ReactNode } from 'react'
 
 /** Valores do formulário: campos numéricos opcionais aceitam vazio (null). */
 interface ValoresFormulario {
@@ -133,9 +137,11 @@ export function FormularioAchado({ achado, projetoId, aoRecarregar }: Props) {
           id: achado.id,
           dados: dados as EntradaEditarAchado,
         })
+        toast.success('Alterações salvas')
         navegar(`/achados/${salvo.id}`)
       } else {
         const salvo = await registrar.mutateAsync({ projetoId, dados: dados as EntradaCriarAchado })
+        toast.success(`Achado ${salvo.codigo} registrado`)
         navegar(`/achados/${salvo.id}`)
       }
     } catch (err) {
@@ -155,177 +161,232 @@ export function FormularioAchado({ achado, projetoId, aoRecarregar }: Props) {
   const cweValido = typeof cwe === 'number' && Number.isInteger(cwe) && cwe > 0
 
   return (
-    <form
-      className="cartao formulario formulario--largo"
-      onSubmit={(e) => void aoEnviar(e)}
-      noValidate
-    >
+    <form className="grid gap-6" onSubmit={(e) => void aoEnviar(e)} noValidate>
       {erroGeral && (
-        <div className="alerta alerta--erro" role="alert">
-          {erroGeral}
-          {conflito && (
-            <div className="acoes" style={{ marginTop: '0.5rem' }}>
-              <button
+        <Alert variant="destructive">
+          <CircleAlertIcon />
+          <AlertTitle>
+            {conflito ? 'Outra pessoa alterou este achado' : 'Não foi possível salvar'}
+          </AlertTitle>
+          <AlertDescription>
+            <p>{erroGeral}</p>
+            {conflito && (
+              <Button
                 type="button"
-                className="botao botao--pequeno"
+                variant="outline"
+                size="sm"
+                className="mt-2"
                 onClick={() => void recarregar()}
               >
+                <RotateCcwIcon />
                 Recarregar dados atuais (descarta suas alterações)
-              </button>
-            </div>
-          )}
-        </div>
+              </Button>
+            )}
+          </AlertDescription>
+        </Alert>
       )}
 
-      <Campo rotulo="Título" erro={errors.titulo?.message} obrigatorio>
-        <input maxLength={160} {...register('titulo')} />
-      </Campo>
-
-      <div className="linha-campos">
-        <Campo rotulo="Origem" erro={errors.origem?.message} obrigatorio>
-          <select {...register('origem')}>
-            {ORIGENS_ACHADO.map((o) => (
-              <option key={o} value={o}>
-                {ROTULOS_ORIGEM[o]}
-              </option>
-            ))}
-          </select>
+      <Secao titulo="Identificação" descricao="O que foi encontrado e onde.">
+        <Campo rotulo="Título" erro={errors.titulo?.message} obrigatorio>
+          <Input maxLength={160} {...register('titulo')} />
         </Campo>
-        <Campo rotulo="Severidade" erro={errors.severidade?.message} obrigatorio>
-          <select {...register('severidade')}>
-            {SEVERIDADES.map((s) => (
-              <option key={s} value={s}>
-                {ROTULOS_SEVERIDADE[s]}
-              </option>
-            ))}
-          </select>
-        </Campo>
+        <div className="grid gap-5 sm:grid-cols-2">
+          <Campo rotulo="Origem" erro={errors.origem?.message} obrigatorio>
+            <NativeSelect {...register('origem')}>
+              {ORIGENS_ACHADO.map((o) => (
+                <NativeSelectOption key={o} value={o}>
+                  {ROTULOS_ORIGEM[o]}
+                </NativeSelectOption>
+              ))}
+            </NativeSelect>
+          </Campo>
+          <Campo rotulo="Severidade" erro={errors.severidade?.message} obrigatorio>
+            <NativeSelect {...register('severidade')}>
+              {SEVERIDADES.map((s) => (
+                <NativeSelectOption key={s} value={s}>
+                  {ROTULOS_SEVERIDADE[s]}
+                </NativeSelectOption>
+              ))}
+            </NativeSelect>
+          </Campo>
+        </div>
         <Campo
           rotulo="Localização"
           erro={errors.localizacao?.message}
           ajuda="URL, rota, arquivo e linha, ou host e porta."
           obrigatorio
         >
-          <input maxLength={500} className="mono" {...register('localizacao')} />
+          <Input maxLength={500} className="font-mono" {...register('localizacao')} />
         </Campo>
-      </div>
+        <Campo
+          rotulo="Ativo afetado"
+          erro={errors.ativoId?.message}
+          ajuda="Opcional; ativos cadastrados no projeto."
+        >
+          <NativeSelect {...register('ativoId', { setValueAs: (v: string | null) => v || null })}>
+            <NativeSelectOption value="">Nenhum</NativeSelectOption>
+            {ativos.data?.map((a) => (
+              <NativeSelectOption key={a.id} value={a.id}>
+                {a.nome} ({a.identificador})
+              </NativeSelectOption>
+            ))}
+          </NativeSelect>
+        </Campo>
+      </Secao>
 
-      <div className="linha-campos">
+      <Secao
+        titulo="Classificação"
+        descricao="Referências que ajudam a priorizar e a pesquisar a correção."
+      >
         <Campo rotulo="Categoria OWASP Top 10" erro={errors.categoriaOwaspId?.message}>
-          <select {...register('categoriaOwaspId', { setValueAs: numeroOuNulo })}>
-            <option value="">Não classificado</option>
+          <NativeSelect {...register('categoriaOwaspId', { setValueAs: numeroOuNulo })}>
+            <NativeSelectOption value="">Não classificado</NativeSelectOption>
             {categorias.data?.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.codigo}:{c.versao} — {c.nome}
-              </option>
+              <NativeSelectOption key={c.id} value={c.id}>
+                {c.codigo}:{c.versao} {c.nome}
+              </NativeSelectOption>
             ))}
-          </select>
+          </NativeSelect>
+        </Campo>
+        <div className="grid gap-5 sm:grid-cols-3">
+          <Campo
+            rotulo="CWE"
+            erro={errors.cweId?.message}
+            ajuda={
+              cweValido ? (
+                <a
+                  href={`https://cwe.mitre.org/data/definitions/${cwe}.html`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 text-primary hover:underline"
+                >
+                  Ver CWE-{cwe} no MITRE
+                  <ExternalLinkIcon className="size-3" />
+                </a>
+              ) : (
+                'Só o número, ex.: 79.'
+              )
+            }
+          >
+            <Input
+              type="number"
+              inputMode="numeric"
+              min={1}
+              step={1}
+              {...register('cweId', { setValueAs: numeroOuNulo })}
+            />
+          </Campo>
+          <Campo rotulo="CVE" erro={errors.cveId?.message} ajuda="Opcional, ex.: CVE-2021-44228.">
+            <Input className="font-mono" maxLength={20} {...register('cveId')} />
+          </Campo>
+          <Campo
+            rotulo="Nota CVSS"
+            erro={errors.notaCvss?.message}
+            ajuda="Opcional, de 0,0 a 10,0."
+          >
+            <Input
+              type="number"
+              inputMode="decimal"
+              min={0}
+              max={10}
+              step={0.1}
+              {...register('notaCvss', { setValueAs: numeroOuNulo })}
+            />
+          </Campo>
+        </div>
+      </Secao>
+
+      <Secao
+        titulo="Detalhes técnicos"
+        descricao="O suficiente para outra pessoa reproduzir e entender o risco."
+      >
+        <Campo rotulo="Descrição" erro={errors.descricao?.message} obrigatorio>
+          <Textarea rows={5} maxLength={10_000} {...register('descricao')} />
         </Campo>
         <Campo
-          rotulo="CWE"
-          erro={errors.cweId?.message}
-          ajuda={
-            cweValido ? (
-              <a
-                href={`https://cwe.mitre.org/data/definitions/${cwe}.html`}
-                target="_blank"
-                rel="noopener noreferrer"
+          rotulo="Impacto"
+          erro={errors.impacto?.message}
+          ajuda="O que um atacante consegue ao explorar."
+        >
+          <Textarea rows={3} maxLength={4000} {...register('impacto')} />
+        </Campo>
+        <Campo rotulo="Passos de reprodução" erro={errors.passosReproducao?.message}>
+          <Textarea
+            rows={5}
+            maxLength={10_000}
+            className="font-mono text-[13px]"
+            {...register('passosReproducao')}
+          />
+        </Campo>
+      </Secao>
+
+      <Secao titulo="Correção e prazo" descricao="Como corrigir, até quando e com quem.">
+        <Campo rotulo="Correção proposta" erro={errors.correcaoProposta?.message} obrigatorio>
+          <Textarea rows={4} maxLength={10_000} {...register('correcaoProposta')} />
+        </Campo>
+        <div className="grid gap-5 sm:grid-cols-2">
+          <Campo
+            rotulo="Data-limite de correção"
+            erro={errors.dataLimite?.message}
+            ajuda={
+              edicao
+                ? 'Alterar fixa a data manualmente; em branco, o achado fica sem prazo.'
+                : 'Em branco, vem da severidade: Crítica 7 dias, Alta 30, Média 90, Baixa 180.'
+            }
+          >
+            <Input type="date" {...register('dataLimite')} />
+          </Campo>
+          {!edicao && (
+            <Campo
+              rotulo="Responsável"
+              erro={errors.responsavelId?.message}
+              ajuda="Opcional; pode ser definido depois."
+            >
+              <NativeSelect
+                {...register('responsavelId', { setValueAs: (v: string) => v || null })}
               >
-                Ver CWE-{cwe} no site do MITRE
-              </a>
-            ) : (
-              'Somente o número, ex.: 79.'
-            )
-          }
-        >
-          <input
-            type="number"
-            inputMode="numeric"
-            min={1}
-            step={1}
-            {...register('cweId', { setValueAs: numeroOuNulo })}
-          />
-        </Campo>
-        <Campo rotulo="CVE" erro={errors.cveId?.message} ajuda="Opcional, ex.: CVE-2021-44228.">
-          <input className="mono" maxLength={20} {...register('cveId')} />
-        </Campo>
-        <Campo rotulo="Nota CVSS" erro={errors.notaCvss?.message} ajuda="Opcional, de 0,0 a 10,0.">
-          <input
-            type="number"
-            inputMode="decimal"
-            min={0}
-            max={10}
-            step={0.1}
-            {...register('notaCvss', { setValueAs: numeroOuNulo })}
-          />
-        </Campo>
-      </div>
+                <NativeSelectOption value="">Sem responsável</NativeSelectOption>
+                {responsaveis.data?.map((u) => (
+                  <NativeSelectOption key={u.id} value={u.id}>
+                    {u.nome}
+                  </NativeSelectOption>
+                ))}
+              </NativeSelect>
+            </Campo>
+          )}
+        </div>
+      </Secao>
 
-      <Campo
-        rotulo="Ativo afetado"
-        erro={errors.ativoId?.message}
-        ajuda="Opcional; ativos cadastrados no projeto."
-      >
-        <select {...register('ativoId', { setValueAs: (v: string | null) => v || null })}>
-          <option value="">Nenhum</option>
-          {ativos.data?.map((a) => (
-            <option key={a.id} value={a.id}>
-              {a.nome} — {a.identificador}
-            </option>
-          ))}
-        </select>
-      </Campo>
-
-      <Campo
-        rotulo="Data-limite de correção"
-        erro={errors.dataLimite?.message}
-        ajuda={
-          edicao
-            ? 'Alterar a data a fixa manualmente; deixe em branco para o achado ficar sem prazo.'
-            : 'Em branco, é calculada pela severidade: Crítica 7 dias, Alta 30, Média 90, Baixa 180, Informativa sem prazo.'
-        }
-      >
-        <input type="date" {...register('dataLimite')} />
-      </Campo>
-
-      {!edicao && (
-        <Campo
-          rotulo="Responsável"
-          erro={errors.responsavelId?.message}
-          ajuda="Opcional; pode ser definido depois."
-        >
-          <select {...register('responsavelId', { setValueAs: (v: string) => v || null })}>
-            <option value="">Sem responsável</option>
-            {responsaveis.data?.map((u) => (
-              <option key={u.id} value={u.id}>
-                {u.nome}
-              </option>
-            ))}
-          </select>
-        </Campo>
-      )}
-
-      <Campo rotulo="Descrição" erro={errors.descricao?.message} obrigatorio>
-        <textarea rows={5} maxLength={10_000} {...register('descricao')} />
-      </Campo>
-      <Campo rotulo="Impacto" erro={errors.impacto?.message} ajuda="Consequência da exploração.">
-        <textarea rows={3} maxLength={4000} {...register('impacto')} />
-      </Campo>
-      <Campo rotulo="Passos de reprodução" erro={errors.passosReproducao?.message}>
-        <textarea rows={5} maxLength={10_000} className="mono" {...register('passosReproducao')} />
-      </Campo>
-      <Campo rotulo="Correção proposta" erro={errors.correcaoProposta?.message} obrigatorio>
-        <textarea rows={4} maxLength={10_000} {...register('correcaoProposta')} />
-      </Campo>
-
-      <div className="acoes">
-        <button type="submit" className="botao botao--primario" disabled={isSubmitting}>
-          {isSubmitting ? 'Salvando…' : edicao ? 'Salvar alterações' : 'Registrar achado'}
-        </button>
-        <Link to={edicao ? `/achados/${achado.id}` : `/projetos/${projetoId}`} className="botao">
-          Cancelar
-        </Link>
+      <div className="sticky bottom-0 -mx-4 flex gap-2 border-t bg-background/95 px-4 py-3 backdrop-blur md:mx-0 md:rounded-lg md:border md:px-5">
+        <Button type="submit" disabled={isSubmitting}>
+          {isSubmitting && <Spinner />}
+          {edicao ? 'Salvar alterações' : 'Registrar achado'}
+        </Button>
+        <Button asChild variant="outline">
+          <Link to={edicao ? `/achados/${achado.id}` : `/projetos/${projetoId}`}>Cancelar</Link>
+        </Button>
       </div>
     </form>
+  )
+}
+
+/** Seção do formulário: título e descrição à esquerda, campos à direita. */
+function Secao({
+  titulo,
+  descricao,
+  children,
+}: {
+  titulo: string
+  descricao: string
+  children: ReactNode
+}) {
+  return (
+    <section className="grid gap-6 rounded-lg border bg-card p-5 md:grid-cols-[220px_minmax(0,1fr)] md:p-6">
+      <div>
+        <h2 className="text-base font-semibold">{titulo}</h2>
+        <p className="mt-1 text-sm text-muted-foreground">{descricao}</p>
+      </div>
+      <div className="grid gap-5">{children}</div>
+    </section>
   )
 }

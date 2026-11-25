@@ -1,62 +1,83 @@
-import { useState } from 'react'
-import { ErroApi, mensagemDeErro } from '../../api/cliente'
-import { useAtribuirResponsavel, type Achado } from '../../api/achados'
-import { useResponsaveis } from '../../api/usuarios'
+import { toast } from 'sonner'
+import { UserRoundIcon } from 'lucide-react'
+import { ErroApi, mensagemDeErro } from '@/api/cliente'
+import { useAtribuirResponsavel, type Achado } from '@/api/achados'
+import { useResponsaveis } from '@/api/usuarios'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectSeparator,
+  SelectTrigger,
+  SelectValue,
+} from '@/componentes/ui/select'
 
-/** Exibe o responsável e, quando permitido, permite atribuir, trocar ou remover (RF15). */
+const SEM = '__sem'
+
+/** Exibe o responsável e, quando permitido, atribui, troca ou remove (RF15). */
 export function Responsavel({ achado, aoConflito }: { achado: Achado; aoConflito: () => void }) {
   const pode = achado.acoes.atribuirResponsavel
   const responsaveis = useResponsaveis(pode)
   const atribuir = useAtribuirResponsavel()
-  const [escolhido, setEscolhido] = useState(achado.responsavel?.id ?? '')
-  const mudou = escolhido !== (achado.responsavel?.id ?? '')
 
-  async function salvar(responsavelId: string | null) {
+  async function salvar(valor: string) {
+    const responsavelId = valor === SEM ? null : valor
+    if (responsavelId === (achado.responsavel?.id ?? null)) return
     try {
-      await atribuir.mutateAsync({ id: achado.id, dados: { responsavelId, versao: achado.versao } })
+      const novo = await atribuir.mutateAsync({
+        id: achado.id,
+        dados: { responsavelId, versao: achado.versao },
+      })
+      toast.success(
+        novo.responsavel ? `Atribuído a ${novo.responsavel.nome}` : 'Responsável removido',
+      )
+      if (!responsavelId && achado.status === 'EmCorrecao')
+        toast.info('O achado voltou para Aberto.')
     } catch (err) {
       if (err instanceof ErroApi && err.problema.title === 'Conflito de versão') aoConflito()
+      else toast.error(mensagemDeErro(err))
     }
   }
 
-  if (!pode)
+  if (!pode) {
     return (
-      <span>
-        {achado.responsavel?.nome ?? <span className="texto-suave">Sem responsável</span>}
-      </span>
+      <p className="flex items-center gap-2 text-sm">
+        <UserRoundIcon className="size-4 text-muted-foreground" />
+        {achado.responsavel?.nome ?? <span className="text-muted-foreground">Sem responsável</span>}
+      </p>
     )
+  }
 
   return (
-    <div className="responsavel">
-      <div className="acoes">
-        <select
-          aria-label="Responsável"
-          value={escolhido}
-          onChange={(e) => setEscolhido(e.target.value)}
-          disabled={atribuir.isPending}
-        >
-          <option value="">Sem responsável</option>
+    <div className="grid gap-2">
+      <Select
+        value={achado.responsavel?.id ?? SEM}
+        onValueChange={(v) => void salvar(v)}
+        disabled={atribuir.isPending}
+      >
+        <SelectTrigger aria-label="Responsável" className="w-full">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value={SEM}>Sem responsável</SelectItem>
+          <SelectSeparator />
+          {/* Mantém o responsável atual na lista mesmo que tenha sido desativado. */}
+          {achado.responsavel &&
+            !responsaveis.data?.some((u) => u.id === achado.responsavel?.id) && (
+              <SelectItem value={achado.responsavel.id}>{achado.responsavel.nome}</SelectItem>
+            )}
           {responsaveis.data?.map((u) => (
-            <option key={u.id} value={u.id}>
+            <SelectItem key={u.id} value={u.id}>
               {u.nome}
-            </option>
+            </SelectItem>
           ))}
-        </select>
-        {mudou && (
-          <button
-            type="button"
-            className="botao botao--primario botao--pequeno"
-            disabled={atribuir.isPending}
-            onClick={() => void salvar(escolhido || null)}
-          >
-            {escolhido ? 'Atribuir' : 'Remover responsável'}
-          </button>
-        )}
-      </div>
-      {mudou && !escolhido && achado.status === 'EmCorrecao' && (
-        <span className="campo__ajuda">O achado voltará para Aberto.</span>
+        </SelectContent>
+      </Select>
+      {achado.status === 'EmCorrecao' && (
+        <p className="text-xs text-muted-foreground">
+          Remover o responsável devolve o achado para Aberto.
+        </p>
       )}
-      {atribuir.isError && <span className="campo__erro">{mensagemDeErro(atribuir.error)}</span>}
     </div>
   )
 }

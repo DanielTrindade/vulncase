@@ -329,7 +329,8 @@ async function api(p, metodo, caminho, corpo) {
       fullPage: true,
     })
     await ana.goto(`${BASE}/projetos/${projeto.id}`)
-    await ana.waitForSelector('.recharts-bar-rectangle')
+    await ana.waitForSelector('[data-segmento]')
+    await ana.waitForTimeout(800) // fim da animação de revelação da faixa
     await ana.screenshot({
       path: `${CAPTURAS}/vuln-painel.jpg`,
       type: 'jpeg',

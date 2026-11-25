@@ -1,51 +1,68 @@
 import { useState } from 'react'
+import { toast } from 'sonner'
+import { PlusIcon, UserRoundCheckIcon, UserRoundXIcon } from 'lucide-react'
 import { PAPEIS, ROTULOS_PAPEL, type Papel } from '@vulncase/compartilhado'
-import { mensagemDeErro } from '../../api/cliente'
-import { useAlterarUsuario, useUsuarios, type UsuarioLista } from '../../api/usuarios'
-import { useUsuario } from '../../auth/sessao'
-import { DialogoConfirmacao } from '../../componentes/dialogo'
-import { Carregando, MensagemErro, Vazio } from '../../componentes/estado'
+import { mensagemDeErro } from '@/api/cliente'
+import { useAlterarUsuario, useUsuarios, type UsuarioLista } from '@/api/usuarios'
+import { useUsuario } from '@/auth/sessao'
+import { CabecalhoPagina } from '@/componentes/cabecalho'
+import { DialogoConfirmacao } from '@/componentes/dialogo'
+import { Carregando, MensagemErro, Vazio } from '@/componentes/estado'
+import { Badge } from '@/componentes/ui/badge'
+import { Button } from '@/componentes/ui/button'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/componentes/ui/dialog'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/componentes/ui/select'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/componentes/ui/table'
+import { cn } from '@/lib/utils'
 import { FormularioNovoUsuario } from './FormularioNovoUsuario'
 
+/** Papel editável na própria linha; a troca encerra as sessões do usuário. */
 function SeletorPapel({ usuario, desabilitado }: { usuario: UsuarioLista; desabilitado: boolean }) {
   const alterar = useAlterarUsuario()
-  const [papel, setPapel] = useState<Papel>(usuario.papel)
-  const mudou = papel !== usuario.papel
   return (
-    <div className="acoes">
-      <select
-        aria-label={`Papel de ${usuario.nome}`}
-        value={papel}
-        disabled={desabilitado || alterar.isPending}
-        onChange={(e) => setPapel(e.target.value as Papel)}
-      >
+    <Select
+      value={usuario.papel}
+      disabled={desabilitado || alterar.isPending}
+      onValueChange={(papel) =>
+        alterar.mutate(
+          { id: usuario.id, dados: { papel: papel as Papel } },
+          {
+            onSuccess: (u) => toast.success(`${u.nome} agora é ${ROTULOS_PAPEL[u.papel]}`),
+            onError: (err) => toast.error(mensagemDeErro(err)),
+          },
+        )
+      }
+    >
+      <SelectTrigger size="sm" aria-label={`Papel de ${usuario.nome}`} className="w-[160px]">
+        <SelectValue />
+      </SelectTrigger>
+      <SelectContent>
         {PAPEIS.map((p) => (
-          <option key={p} value={p}>
+          <SelectItem key={p} value={p}>
             {ROTULOS_PAPEL[p]}
-          </option>
+          </SelectItem>
         ))}
-      </select>
-      {mudou && (
-        <>
-          <button
-            type="button"
-            className="botao botao--primario botao--pequeno"
-            disabled={alterar.isPending}
-            onClick={() => alterar.mutate({ id: usuario.id, dados: { papel } })}
-          >
-            Salvar
-          </button>
-          <button
-            type="button"
-            className="botao botao--pequeno"
-            onClick={() => setPapel(usuario.papel)}
-          >
-            Desfazer
-          </button>
-        </>
-      )}
-      {alterar.isError && <span className="campo__erro">{mensagemDeErro(alterar.error)}</span>}
-    </div>
+      </SelectContent>
+    </Select>
   )
 }
 
@@ -54,7 +71,6 @@ export function PaginaUsuarios() {
   const usuarios = useUsuarios()
   const alterar = useAlterarUsuario()
   const [criando, setCriando] = useState(false)
-  const [mensagem, setMensagem] = useState<string | null>(null)
   const [alvo, setAlvo] = useState<UsuarioLista | null>(null)
 
   function confirmarSituacao() {
@@ -63,7 +79,7 @@ export function PaginaUsuarios() {
       { id: alvo.id, dados: { ativo: !alvo.ativo } },
       {
         onSuccess: (u) => {
-          setMensagem(`${u.nome} foi ${u.ativo ? 'reativado' : 'desativado'}.`)
+          toast.success(`${u.nome} ${u.ativo ? 'reativado' : 'desativado'}`)
           setAlvo(null)
         },
       },
@@ -71,124 +87,134 @@ export function PaginaUsuarios() {
   }
 
   return (
-    <section>
-      <div className="cabecalho-pagina">
-        <div>
-          <h1>Usuários</h1>
-          <p className="cabecalho-pagina__sub">Cadastro, papel e situação das contas.</p>
-        </div>
-        {!criando && (
-          <button type="button" className="botao botao--primario" onClick={() => setCriando(true)}>
+    <>
+      <CabecalhoPagina
+        titulo="Usuários"
+        descricao="Contas, papéis e acesso à ferramenta."
+        acoes={
+          <Button onClick={() => setCriando(true)}>
+            <PlusIcon />
             Novo usuário
-          </button>
-        )}
-      </div>
-
-      {mensagem && (
-        <div className="alerta alerta--sucesso" role="status">
-          {mensagem}
-        </div>
-      )}
-
-      {criando && (
-        <FormularioNovoUsuario
-          aoCancelar={() => setCriando(false)}
-          aoCriar={(nome) => {
-            setCriando(false)
-            setMensagem(`Usuário ${nome} cadastrado.`)
-          }}
-        />
-      )}
+          </Button>
+        }
+      />
 
       {usuarios.isPending ? (
         <Carregando />
       ) : usuarios.isError ? (
         <MensagemErro erro={usuarios.error} />
       ) : usuarios.data.length === 0 ? (
-        <Vazio>Nenhum usuário cadastrado.</Vazio>
+        <Vazio titulo="Nenhum usuário cadastrado" />
       ) : (
-        <div className="tabela-contorno">
-          <table className="tabela">
-            <thead>
-              <tr>
-                <th>Nome</th>
-                <th>E-mail</th>
-                <th>Papel</th>
-                <th>Situação</th>
-                <th className="tabela__acao">Ações</th>
-              </tr>
-            </thead>
-            <tbody>
+        <div className="rounded-lg border bg-card">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="pl-4">Nome</TableHead>
+                <TableHead>E-mail</TableHead>
+                <TableHead>Papel</TableHead>
+                <TableHead>Situação</TableHead>
+                <TableHead className="pr-4 text-right">Acesso</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {usuarios.data.map((u) => {
                 const proprio = u.id === eu.id
                 return (
-                  <tr key={u.id}>
-                    <td>
+                  <TableRow
+                    key={u.id}
+                    data-email={u.email}
+                    className={cn(!u.ativo && 'text-muted-foreground')}
+                  >
+                    <TableCell className="pl-4 font-medium">
                       {u.nome}
-                      {proprio && <span className="texto-suave"> (você)</span>}
-                    </td>
-                    <td>{u.email}</td>
-                    <td>
+                      {proprio && (
+                        <span className="ml-1.5 font-normal text-muted-foreground">(você)</span>
+                      )}
+                    </TableCell>
+                    <TableCell>{u.email}</TableCell>
+                    <TableCell>
                       <SeletorPapel
                         key={`${u.id}-${u.papel}`}
                         usuario={u}
                         desabilitado={proprio || !u.ativo}
                       />
-                    </td>
-                    <td>
+                    </TableCell>
+                    <TableCell>
                       {u.ativo ? (
-                        <span className="selo selo--neutro">Ativo</span>
+                        <Badge variant="outline" className="text-st-encerrado">
+                          Ativo
+                        </Badge>
                       ) : (
-                        <span className="selo selo--inativo">Inativo</span>
+                        <Badge variant="outline" className="text-destructive">
+                          Inativo
+                        </Badge>
                       )}
-                    </td>
-                    <td className="tabela__acao">
+                    </TableCell>
+                    <TableCell className="pr-4 text-right">
                       {!proprio && (
-                        <button
-                          type="button"
-                          className={
-                            u.ativo ? 'botao botao--perigo botao--pequeno' : 'botao botao--pequeno'
-                          }
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className={cn(u.ativo && 'text-destructive hover:text-destructive')}
                           onClick={() => {
                             alterar.reset()
                             setAlvo(u)
                           }}
                         >
+                          {u.ativo ? <UserRoundXIcon /> : <UserRoundCheckIcon />}
                           {u.ativo ? 'Desativar' : 'Reativar'}
-                        </button>
+                        </Button>
                       )}
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 )
               })}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
         </div>
       )}
 
+      <Dialog open={criando} onOpenChange={setCriando}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Novo usuário</DialogTitle>
+            <DialogDescription>
+              A pessoa entra com o e-mail e a senha inicial definidos aqui.
+            </DialogDescription>
+          </DialogHeader>
+          {criando && (
+            <FormularioNovoUsuario
+              aoCancelar={() => setCriando(false)}
+              aoCriar={(nome) => {
+                setCriando(false)
+                toast.success(`Usuário ${nome} cadastrado`)
+              }}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+
       <DialogoConfirmacao
         aberto={alvo !== null}
-        titulo={alvo?.ativo ? 'Desativar usuário' : 'Reativar usuário'}
+        titulo={alvo?.ativo ? `Desativar ${alvo.nome}?` : `Reativar ${alvo?.nome ?? ''}?`}
         mensagem={
           alvo?.ativo ? (
             <>
-              <strong>{alvo.nome}</strong> perderá o acesso imediatamente. Os achados abertos
-              atribuídos a essa pessoa ficarão sem responsável, e os que estiverem em correção
-              voltarão para Aberto.
+              A pessoa perde o acesso na hora. Os achados abertos atribuídos a ela ficam sem
+              responsável, e os que estavam em correção voltam para Aberto.
             </>
           ) : (
-            <>
-              <strong>{alvo?.nome}</strong> voltará a poder entrar no sistema.
-            </>
+            <>A pessoa volta a poder entrar com a senha atual.</>
           )
         }
-        rotuloConfirmar={alvo?.ativo ? 'Desativar' : 'Reativar'}
+        rotuloConfirmar={alvo?.ativo ? 'Desativar usuário' : 'Reativar usuário'}
         perigo={alvo?.ativo ?? false}
         ocupado={alterar.isPending}
         erro={alterar.isError ? mensagemDeErro(alterar.error) : null}
         aoConfirmar={confirmarSituacao}
         aoCancelar={() => setAlvo(null)}
       />
-    </section>
+    </>
   )
 }
