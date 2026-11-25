@@ -1,0 +1,7 @@
+# Serve os arquivos estáticos do front-end dentro da rede interna do Compose.
+:8080 {
+	root * /srv
+	encode gzip
+	try_files {path} /index.html
+	file_server
+}

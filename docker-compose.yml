@@ -1,0 +1,63 @@
+name: vulncase
+
+services:
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: vulncase
+      POSTGRES_USER: vulncase
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?defina POSTGRES_PASSWORD no .env}
+    volumes:
+      - dados-db:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U vulncase -d vulncase']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks: [interna]
+
+  api:
+    build:
+      context: .
+      target: api
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      DATABASE_URL: postgres://vulncase:${POSTGRES_PASSWORD}@db:5432/vulncase
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - evidencias:/data/evidencias
+    networks: [interna]
+
+  web:
+    build:
+      context: .
+      target: web
+    restart: unless-stopped
+    networks: [interna]
+
+  proxy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - '80:80'
+      - '443:443'
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-dados:/data
+    depends_on:
+      - api
+      - web
+    networks: [interna]
+
+volumes:
+  dados-db:
+  # Volume de evidências: montado apenas na API, nunca exposto pelo proxy (DT09).
+  evidencias:
+  caddy-dados:
+
+networks:
+  interna:
