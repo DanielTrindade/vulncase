@@ -2,6 +2,7 @@ import { Hono } from 'hono'
 import {
   esquemaAtribuirResponsavel,
   esquemaEditarAchado,
+  esquemaFiltroAchados,
   esquemaTransicao,
   paramId,
 } from '@vulncase/compartilhado'
@@ -16,8 +17,12 @@ import {
   executarTransicao,
 } from '../servicos/achados.js'
 import { listarHistorico } from '../servicos/historico.js'
+import { listarAchados } from '../servicos/listagem-achados.js'
 
 export const rotasAchados = new Hono<Ambiente>()
+  .get('/', validar('query', esquemaFiltroAchados), async (c) =>
+    c.json(await listarAchados(c.get('deps').db, c.req.valid('query')), 200),
+  )
   .get('/:id', validar('param', paramId), async (c) =>
     c.json(await detalharAchado(c.get('deps').db, c.req.valid('param').id, usuarioAtual(c)), 200),
   )

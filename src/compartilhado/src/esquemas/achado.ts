@@ -76,3 +76,43 @@ export const esquemaTransicao = z.strictObject({
   versao: z.number().int().min(1),
 })
 export type EntradaTransicao = z.infer<typeof esquemaTransicao>
+
+/** Aceita um valor ou um parâmetro repetido (?status=A&status=B). */
+const repetivel = <T extends readonly [string, ...string[]]>(valores: T, mensagem: string) =>
+  z
+    .union([z.enum(valores, mensagem), z.array(z.enum(valores, mensagem)).max(valores.length)])
+    .optional()
+    .transform((v) => (v === undefined ? undefined : Array.isArray(v) ? v : [v]))
+
+const booleanoTexto = z
+  .enum(['true', 'false'], 'Use true ou false.')
+  .optional()
+  .transform((v) => (v === undefined ? undefined : v === 'true'))
+
+/** Campos de ordenação aceitos: lista fechada (A04). */
+export const CAMPOS_ORDENACAO = ['severidade', 'criadoEm', 'dataLimite'] as const
+export type CampoOrdenacao = (typeof CAMPOS_ORDENACAO)[number]
+export const TAMANHO_PAGINA_MAXIMO = 100
+
+/** Filtros de GET /api/achados (RF18). Parâmetros desconhecidos são recusados. */
+export const esquemaFiltroAchados = z.strictObject({
+  projetoId: uuid.optional(),
+  status: repetivel(STATUS_ACHADO, 'Status inválido.'),
+  severidade: repetivel(SEVERIDADES, 'Severidade inválida.'),
+  responsavelId: uuid.optional(),
+  semResponsavel: booleanoTexto,
+  categoriaOwaspId: z.coerce.number().int().min(1).max(1000).optional(),
+  vencido: booleanoTexto,
+  busca: z.string().trim().max(100, 'Máximo de 100 caracteres.').optional(),
+  ordenarPor: z.enum(CAMPOS_ORDENACAO, 'Ordenação inválida.').default('criadoEm'),
+  ordem: z.enum(['asc', 'desc'], 'Use asc ou desc.').default('desc'),
+  pagina: z.coerce.number().int().min(1).max(100_000).default(1),
+  tamanhoPagina: z.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(TAMANHO_PAGINA_MAXIMO, `No máximo ${TAMANHO_PAGINA_MAXIMO} por página.`)
+    .default(20),
+})
+export type FiltroAchados = z.infer<typeof esquemaFiltroAchados>
+export type ConsultaAchados = z.input<typeof esquemaFiltroAchados>
