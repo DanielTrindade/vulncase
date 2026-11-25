@@ -73,54 +73,52 @@ describe('GET /api/achados', () => {
       criadoEm: new Date(Date.UTC(2026, 0, 1, 0, n)),
       ...extra,
     })
-    await t.db
-      .insert(achados)
-      .values([
-        linha(a, {
-          titulo: 'SQL Injection no login',
-          severidade: 'Critica',
-          status: 'Aberto',
-          dataLimite: ontem,
-        }),
-        linha(a, {
-          titulo: 'XSS refletido',
-          severidade: 'Media',
-          status: 'EmCorrecao',
-          responsavelId: dev.usuario.id,
-          dataLimite: amanha,
-        }),
-        linha(a, {
-          titulo: 'Cabeçalho ausente',
-          severidade: 'Baixa',
-          status: 'Corrigido',
-          encerradoEm: new Date(),
-          dataLimite: ontem,
-        }),
-        linha(a, {
-          titulo: 'Versão exposta 100%_real',
-          severidade: 'Informativa',
-          status: 'Aberto',
-          categoriaOwaspId: 5,
-        }),
-        linha(b, {
-          titulo: 'Telnet aberto',
-          severidade: 'Alta',
-          status: 'AguardandoVerificacao',
-          responsavelId: dev.usuario.id,
-        }),
-        linha(b, {
-          titulo: 'SMB exposto',
-          severidade: 'Alta',
-          status: 'FalsoPositivo',
-          encerradoEm: new Date(),
-        }),
-        linha(c, {
-          titulo: 'Do projeto arquivado',
-          severidade: 'Alta',
-          status: 'Corrigido',
-          encerradoEm: new Date(),
-        }),
-      ])
+    await t.db.insert(achados).values([
+      linha(a, {
+        titulo: 'SQL Injection no login',
+        severidade: 'Critica',
+        status: 'Aberto',
+        dataLimite: ontem,
+      }),
+      linha(a, {
+        titulo: 'XSS refletido',
+        severidade: 'Media',
+        status: 'EmCorrecao',
+        responsavelId: dev.usuario.id,
+        dataLimite: amanha,
+      }),
+      linha(a, {
+        titulo: 'Cabeçalho ausente',
+        severidade: 'Baixa',
+        status: 'Corrigido',
+        encerradoEm: new Date(),
+        dataLimite: ontem,
+      }),
+      linha(a, {
+        titulo: 'Versão exposta 100%_real',
+        severidade: 'Informativa',
+        status: 'Aberto',
+        categoriaOwaspId: 5,
+      }),
+      linha(b, {
+        titulo: 'Telnet aberto',
+        severidade: 'Alta',
+        status: 'AguardandoVerificacao',
+        responsavelId: dev.usuario.id,
+      }),
+      linha(b, {
+        titulo: 'SMB exposto',
+        severidade: 'Alta',
+        status: 'FalsoPositivo',
+        encerradoEm: new Date(),
+      }),
+      linha(c, {
+        titulo: 'Do projeto arquivado',
+        severidade: 'Alta',
+        status: 'Corrigido',
+        encerradoEm: new Date(),
+      }),
+    ])
   })
   afterAll(async () => {
     await t.banco.encerrar()

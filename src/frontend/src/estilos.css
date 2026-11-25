@@ -611,3 +611,91 @@ textarea:focus,
   overflow-wrap: anywhere;
   margin: 0;
 }
+
+/* ---------- filtros da lista de achados ---------- */
+.filtros {
+  display: grid;
+  gap: 0.9rem;
+  margin-bottom: 1rem;
+}
+.filtros__busca {
+  display: flex;
+  gap: 0.5rem;
+}
+.filtros__linha {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.9rem;
+  align-items: flex-end;
+}
+.filtros__linha--fim {
+  justify-content: flex-start;
+}
+.filtros__campo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 190px;
+  font-size: 0.85rem;
+  color: var(--texto-suave);
+}
+.filtros__campo--caixa {
+  padding-bottom: 0.5rem;
+}
+.filtros__grupo {
+  border: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  align-items: center;
+}
+.filtros__grupo legend {
+  font-size: 0.85rem;
+  color: var(--texto-suave);
+  margin-bottom: 0.35rem;
+  padding: 0;
+}
+.chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.2rem 0.7rem;
+  border-radius: 999px;
+  border: 1px solid var(--borda);
+  font-size: 0.85rem;
+  cursor: pointer;
+  user-select: none;
+}
+.chip input {
+  position: absolute;
+  opacity: 0;
+  width: 1px;
+  height: 1px;
+}
+.chip:focus-within {
+  outline: 2px solid var(--primaria);
+}
+.chip--ativo {
+  background: var(--primaria-suave);
+  border-color: var(--primaria);
+  color: var(--primaria);
+  font-weight: 600;
+}
+.tabela__titulo {
+  max-width: 420px;
+}
+.tabela__sub {
+  display: block;
+  font-size: 0.8rem;
+}
+.link-discreto {
+  color: inherit;
+  text-decoration: none;
+}
+.link-discreto:hover {
+  text-decoration: underline;
+}
+[aria-busy='true'] {
+  opacity: 0.6;
+}
