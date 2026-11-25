@@ -65,7 +65,7 @@ export const tratarErro: ErrorHandler<Ambiente> = (err, c) => {
   if (err instanceof HTTPException) {
     const status = err.status
     if (status === 403) {
-      // O único HTTPException 403 vem do middleware csrf.
+      // O único HTTPException 403 vem da verificação de origem (CSRF).
       log?.warn({ evento: 'csrf.origem_recusada', origem: c.req.header('origin') ?? null })
       return responderProblema(
         c,

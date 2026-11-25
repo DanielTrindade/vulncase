@@ -26,7 +26,7 @@ flowchart LR
 | Linguagem | TypeScript em modo estrito | Front-end, back-end e esquemas compartilhados. |
 | *Runtime* | Node.js 24 LTS com `@hono/node-server` | Execução da API. |
 | *Framework* HTTP | Hono | Rotas, *middlewares* e cliente RPC tipado. |
-| *Middlewares* de segurança | `secureHeaders`, `csrf` e `bodyLimit`, nativos do Hono | RNF10, RNF05 e RNF14. |
+| *Middlewares* de segurança | `secureHeaders` e `bodyLimit`, nativos do Hono, e `verificarOrigem`, próprio | RNF10, RNF05 e RNF14. O `csrf` nativo do Hono só verifica corpos de formulário e deixa passar JSON; por isso a verificação de origem é feita por um *middleware* próprio que vale para qualquer tipo de conteúdo. |
 | Validação | Zod com `@hono/zod-validator` | Validação de corpo, parâmetros e consulta (RNF07). |
 | Persistência | Drizzle ORM com o *driver* `pg` | Consultas tipadas e parametrizadas (RNF08). |
 | *Migrations* | `drizzle-kit` | Criação e evolução do esquema (RNF18). |
@@ -106,7 +106,7 @@ A Listagem 1 mostra a ordem de aplicação dos *middlewares* em `app.ts`. A orde
 const app = new Hono<Ambiente>()
   .use(registrarRequisicao())
   .use(secureHeaders({ contentSecurityPolicy: csp, xFrameOptions: 'DENY' }))
-  .use('/api/*', csrf({ origin: config.origemPermitida }))
+  .use('/api/*', verificarOrigem(config.origemPermitida))
   .use('/api/*', bodyLimit({ maxSize: 64 * 1024 }))
   .use('/api/*', carregarSessao())
   .route('/api/auth', rotasAuth)
@@ -141,7 +141,7 @@ O limite de 64 KB vale para corpos JSON. A rota de envio de evidências sobrescr
 
 ## 5. Contrato da API
 
-Todas as rotas ficam sob `/api`, exigem sessão válida (exceto `POST /api/auth/login`) e respondem em JSON. Erros seguem o formato *Problem Details* (RFC 9457), sem pilha de execução. Requisições `POST`, `PUT`, `PATCH` e `DELETE` vindas de origem diferente da configurada são recusadas pelo *middleware* `csrf` (RNF05).
+Todas as rotas ficam sob `/api`, exigem sessão válida (exceto `POST /api/auth/login`) e respondem em JSON. Erros seguem o formato *Problem Details* (RFC 9457), sem pilha de execução. Requisições `POST`, `PUT`, `PATCH` e `DELETE` vindas de origem diferente da configurada são recusadas pelo *middleware* `verificarOrigem` (RNF05).
 
 **Tabela 2 — Rotas da API**
 
