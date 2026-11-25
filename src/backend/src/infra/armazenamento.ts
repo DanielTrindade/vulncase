@@ -18,9 +18,12 @@ export class Armazenamento {
   }
 
   async gravar(conteudo: Uint8Array): Promise<string> {
+    // O diretório vem da configuração do servidor, nunca da requisição.
+    // eslint-disable-next-line security/detect-non-literal-fs-filename
     await mkdir(this.diretorio, { recursive: true, mode: 0o700 })
     const nome = randomUUID()
     // 'wx' falha se o arquivo já existir; 0o600 deixa o arquivo legível só pela API.
+    // eslint-disable-next-line security/detect-non-literal-fs-filename -- nome validado por caminho()
     const arquivo = await open(this.caminho(nome), 'wx', 0o600)
     try {
       await arquivo.writeFile(conteudo)
@@ -31,6 +34,7 @@ export class Armazenamento {
   }
 
   async ler(nome: string): Promise<Buffer> {
+    // eslint-disable-next-line security/detect-non-literal-fs-filename -- nome validado por caminho()
     return readFile(this.caminho(nome))
   }
 

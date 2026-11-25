@@ -10,7 +10,7 @@ function contentDisposition(nome: string): string {
   const ascii = nome
     .normalize('NFKD')
     .replace(/[^\x20-\x7e]/g, '_')
-    .replace(/["\;]/g, '_')
+    .replace(/["\\;]/g, '_')
   return `attachment; filename="${ascii}"; filename*=UTF-8''${encodeURIComponent(nome)}`
 }
 
