@@ -39,6 +39,7 @@ export default tseslint.config(
         process: 'readonly',
         console: 'readonly',
         document: 'readonly',
+        Buffer: 'readonly',
       },
     },
     rules: {
