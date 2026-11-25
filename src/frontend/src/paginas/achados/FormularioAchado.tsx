@@ -21,6 +21,7 @@ import {
   useRegistrarAchado,
   type Achado,
 } from '../../api/achados'
+import { useAtivos } from '../../api/projetos'
 import { useResponsaveis } from '../../api/usuarios'
 import { Campo } from '../../componentes/campo'
 import { aplicarErrosApi } from '../../componentes/formulario'
@@ -36,6 +37,7 @@ interface ValoresFormulario {
   passosReproducao: string
   correcaoProposta: string
   categoriaOwaspId: number | null
+  ativoId: string | null
   cweId: number | null
   cveId: string
   notaCvss: number | null
@@ -54,6 +56,7 @@ const CAMPOS = [
   'passosReproducao',
   'correcaoProposta',
   'categoriaOwaspId',
+  'ativoId',
   'cweId',
   'cveId',
   'notaCvss',
@@ -78,6 +81,7 @@ function valoresIniciais(achado?: Achado): ValoresFormulario {
     passosReproducao: achado?.passosReproducao ?? '',
     correcaoProposta: achado?.correcaoProposta ?? '',
     categoriaOwaspId: achado?.categoriaOwasp?.id ?? null,
+    ativoId: achado?.ativo?.id ?? null,
     cweId: achado?.cweId ?? null,
     cveId: achado?.cveId ?? '',
     notaCvss: achado?.notaCvss ?? null,
@@ -100,6 +104,7 @@ export function FormularioAchado({ achado, projetoId, aoRecarregar }: Props) {
   const registrar = useRegistrarAchado()
   const editar = useEditarAchado()
   const categorias = useCategoriasOwasp()
+  const ativos = useAtivos(projetoId)
   const responsaveis = useResponsaveis(!edicao)
   const [erroGeral, setErroGeral] = useState<string | null>(null)
   const [conflito, setConflito] = useState(false)
@@ -255,6 +260,21 @@ export function FormularioAchado({ achado, projetoId, aoRecarregar }: Props) {
           />
         </Campo>
       </div>
+
+      <Campo
+        rotulo="Ativo afetado"
+        erro={errors.ativoId?.message}
+        ajuda="Opcional; ativos cadastrados no projeto."
+      >
+        <select {...register('ativoId', { setValueAs: (v: string | null) => v || null })}>
+          <option value="">Nenhum</option>
+          {ativos.data?.map((a) => (
+            <option key={a.id} value={a.id}>
+              {a.nome} — {a.identificador}
+            </option>
+          ))}
+        </select>
+      </Campo>
 
       <Campo
         rotulo="Data-limite de correção"

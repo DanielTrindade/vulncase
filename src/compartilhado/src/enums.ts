@@ -105,3 +105,20 @@ export const ROTULOS_PAPEL: Record<Papel, string> = {
   Analista: 'Analista',
   Desenvolvedor: 'Desenvolvedor',
 }
+
+export const ROTULOS_TIPO_ATIVO: Record<TipoAtivo, string> = {
+  AplicacaoWeb: 'Aplicação web',
+  Api: 'API',
+  AplicativoMovel: 'Aplicativo móvel',
+  Servidor: 'Servidor',
+  ServicoRede: 'Serviço de rede',
+  RepositorioCodigo: 'Repositório de código',
+  Outro: 'Outro',
+}
+
+export const ROTULOS_AMBIENTE: Record<Ambiente, string> = {
+  Desenvolvimento: 'Desenvolvimento',
+  Homologacao: 'Homologação',
+  Producao: 'Produção',
+  Laboratorio: 'Laboratório',
+}

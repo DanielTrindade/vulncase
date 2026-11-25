@@ -111,6 +111,12 @@ export function PaginaAchado() {
                   aoConflito={() => setConflito(true)}
                 />
               </Item>
+              {a.ativo && (
+                <Item rotulo="Ativo">
+                  {a.ativo.nome}{' '}
+                  <span className="mono texto-suave quebra">{a.ativo.identificador}</span>
+                </Item>
+              )}
               <Item rotulo="Origem">{ROTULOS_ORIGEM[a.origem]}</Item>
               <Item rotulo="Localização">
                 <span className="mono quebra">{a.localizacao}</span>

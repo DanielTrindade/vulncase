@@ -50,6 +50,7 @@ export function condicoesFiltro(
   if (f.semResponsavel === true) c.push(isNull(achados.responsavelId))
   if (f.semResponsavel === false) c.push(not(isNull(achados.responsavelId)))
   if (f.categoriaOwaspId) c.push(eq(achados.categoriaOwaspId, f.categoriaOwaspId))
+  if (f.ativoId) c.push(eq(achados.ativoId, f.ativoId))
   if (f.vencido === true) c.push(condicaoVencido(hoje))
   if (f.vencido === false) {
     c.push(or(isNull(achados.dataLimite), not(condicaoVencido(hoje)))!)

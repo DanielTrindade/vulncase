@@ -376,6 +376,29 @@ describe('matriz de autorização por rota e papel', () => {
         }
       },
     },
+    // ---------- ativos ----------
+    {
+      rota: 'GET /api/projetos/:id/ativos',
+      esperado: todos(200),
+      montar: async () => ({
+        metodo: 'GET',
+        caminho: `/api/projetos/${(await projeto()).id}/ativos`,
+      }),
+    },
+    {
+      rota: 'POST /api/projetos/:id/ativos',
+      esperado: gestao(201),
+      montar: async () => ({
+        metodo: 'POST',
+        caminho: `/api/projetos/${(await projeto()).id}/ativos`,
+        corpo: {
+          nome: 'Servidor',
+          tipo: 'Servidor',
+          identificador: '10.0.0.1',
+          ambiente: 'Laboratorio',
+        },
+      }),
+    },
     // ---------- comentários ----------
     {
       rota: 'POST /api/achados/:id/comentarios',

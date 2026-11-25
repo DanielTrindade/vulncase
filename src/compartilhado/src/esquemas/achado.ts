@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { ORIGENS_ACHADO, SEVERIDADES, STATUS_ACHADO } from '../enums.js'
+import { AMBIENTES, ORIGENS_ACHADO, SEVERIDADES, STATUS_ACHADO, TIPOS_ATIVO } from '../enums.js'
 import { textoObrigatorio, textoOpcional, uuid } from './comum.js'
 
 export const CWE_MAXIMO = 9999
@@ -30,6 +30,11 @@ const camposAchado = {
   passosReproducao: textoOpcional(10_000),
   correcaoProposta: textoObrigatorio(10_000),
   categoriaOwaspId: inteiroOpcional(1000, 'Categoria inválida.'),
+  /** RF22: ativo do mesmo projeto. */
+  ativoId: uuid
+    .nullish()
+    .or(z.literal(''))
+    .transform((v) => v || null),
   cweId: inteiroOpcional(CWE_MAXIMO, `Informe o número da CWE (1 a ${CWE_MAXIMO}).`),
   cveId: esquemaCve
     .nullish()
@@ -114,6 +119,7 @@ export const esquemaFiltroAchados = z.strictObject({
   responsavelId: uuid.optional(),
   semResponsavel: booleanoTexto,
   categoriaOwaspId: z.coerce.number().int().min(1).max(1000).optional(),
+  ativoId: uuid.optional(),
   vencido: booleanoTexto,
   busca: z.string().trim().max(100, 'Máximo de 100 caracteres.').optional(),
   ordenarPor: z.enum(CAMPOS_ORDENACAO, 'Ordenação inválida.').default('criadoEm'),
@@ -133,3 +139,13 @@ export const esquemaComentario = z.strictObject({
   texto: textoObrigatorio(4000),
 })
 export type EntradaComentario = z.infer<typeof esquemaComentario>
+
+/** Ativo do projeto (RF11). */
+export const esquemaAtivo = z.strictObject({
+  nome: textoObrigatorio(120),
+  tipo: z.enum(TIPOS_ATIVO, 'Tipo inválido.'),
+  identificador: textoObrigatorio(500),
+  ambiente: z.enum(AMBIENTES, 'Ambiente inválido.'),
+})
+export type EntradaAtivo = z.infer<typeof esquemaAtivo>
+export type FormularioAtivo = z.input<typeof esquemaAtivo>

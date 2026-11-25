@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import type { EntradaProjeto } from '@vulncase/compartilhado'
+import type { EntradaAtivo, EntradaProjeto } from '@vulncase/compartilhado'
 import { api, ler } from './cliente'
 
 export const chavesProjetos = {
@@ -46,5 +46,24 @@ export function useArquivarProjeto() {
   return useMutation({
     mutationFn: (id: string) => ler(api.api.projetos[':id'].arquivar.$post({ param: { id } })),
     onSuccess: () => qc.invalidateQueries({ queryKey: chavesProjetos.todos }),
+  })
+}
+
+export function useAtivos(projetoId: string | undefined) {
+  return useQuery({
+    queryKey: [...chavesProjetos.todos, 'ativos', projetoId ?? ''],
+    queryFn: async () =>
+      (await ler(api.api.projetos[':id'].ativos.$get({ param: { id: projetoId! } }))).itens,
+    enabled: !!projetoId,
+  })
+}
+
+export function useCriarAtivo(projetoId: string) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (dados: EntradaAtivo) =>
+      ler(api.api.projetos[':id'].ativos.$post({ param: { id: projetoId }, json: dados })),
+    onSuccess: () =>
+      qc.invalidateQueries({ queryKey: [...chavesProjetos.todos, 'ativos', projetoId] }),
   })
 }

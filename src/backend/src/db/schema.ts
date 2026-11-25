@@ -5,6 +5,7 @@ import {
   char,
   check,
   date,
+  foreignKey,
   index,
   integer,
   numeric,
@@ -17,7 +18,9 @@ import {
   varchar,
 } from 'drizzle-orm/pg-core'
 import {
+  AMBIENTES,
   ORIGENS_ACHADO,
+  TIPOS_ATIVO,
   PAPEIS,
   SEVERIDADES,
   STATUS_ACHADO,
@@ -99,6 +102,35 @@ export const categoriasOwasp = pgTable(
   (t) => [uniqueIndex('categorias_owasp_versao_codigo_uq').on(t.versao, t.codigo)],
 )
 
+/** Ativos do projeto (RF11): aplicação, API, servidor, repositório... */
+export const ativos = pgTable(
+  'ativos',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    projetoId: uuid('projeto_id')
+      .notNull()
+      .references(() => projetos.id),
+    nome: varchar('nome', { length: 120 }).notNull(),
+    tipo: varchar('tipo', { length: 30, enum: TIPOS_ATIVO }).notNull(),
+    identificador: varchar('identificador', { length: 500 }).notNull(),
+    ambiente: varchar('ambiente', { length: 20, enum: AMBIENTES }).notNull(),
+    criadoEm: instante('criado_em').notNull().defaultNow(),
+  },
+  (t) => [
+    // Alvo da chave estrangeira composta de achados: garante o mesmo projeto (RF22).
+    uniqueIndex('ativos_id_projeto_uq').on(t.id, t.projetoId),
+    uniqueIndex('ativos_projeto_nome_uq').on(t.projetoId, t.nome),
+    check(
+      'ativos_tipo_ck',
+      sql`${t.tipo} IN ('AplicacaoWeb', 'Api', 'AplicativoMovel', 'Servidor', 'ServicoRede', 'RepositorioCodigo', 'Outro')`,
+    ),
+    check(
+      'ativos_ambiente_ck',
+      sql`${t.ambiente} IN ('Desenvolvimento', 'Homologacao', 'Producao', 'Laboratorio')`,
+    ),
+  ],
+)
+
 export const achados = pgTable(
   'achados',
   {
@@ -106,6 +138,8 @@ export const achados = pgTable(
     projetoId: uuid('projeto_id')
       .notNull()
       .references(() => projetos.id),
+    /** RF22: ativo afetado, do mesmo projeto (chave estrangeira composta). */
+    ativoId: uuid('ativo_id'),
     codigo: varchar('codigo', { length: 10 }).notNull(),
     titulo: varchar('titulo', { length: 160 }).notNull(),
     descricao: text('descricao').notNull(),
@@ -134,6 +168,11 @@ export const achados = pgTable(
   },
   (t) => [
     uniqueIndex('achados_codigo_uq').on(t.codigo),
+    foreignKey({
+      name: 'achados_ativo_mesmo_projeto_fk',
+      columns: [t.ativoId, t.projetoId],
+      foreignColumns: [ativos.id, ativos.projetoId],
+    }),
     index('achados_projeto_status_severidade_idx').on(t.projetoId, t.status, t.severidade),
     index('achados_responsavel_status_idx').on(t.responsavelId, t.status),
     index('achados_data_limite_abertos_idx')

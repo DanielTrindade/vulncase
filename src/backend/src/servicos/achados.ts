@@ -8,7 +8,14 @@ import type {
 } from '@vulncase/compartilhado'
 import type { UsuarioSessao } from '../ambiente.js'
 import type { BancoDados } from '../db/cliente.js'
-import { achados, categoriasOwasp, eventosHistorico, projetos, usuarios } from '../db/schema.js'
+import {
+  achados,
+  ativos,
+  categoriasOwasp,
+  eventosHistorico,
+  projetos,
+  usuarios,
+} from '../db/schema.js'
 import {
   acoesPermitidas,
   atribuirResponsavel,
@@ -26,6 +33,7 @@ import {
 } from '../dominio/erros.js'
 import { calcularDataLimite, novaDataLimite, type PrazosSeveridade } from '../dominio/prazo.js'
 import { gerarCodigoAchado, NUMERO_MAXIMO_ACHADO } from '../dominio/projeto.js'
+import { descreverAtivoDoProjeto } from './ativos.js'
 import type { Log } from '../infra/log.js'
 
 export type Transacao = Parameters<Parameters<BancoDados['transaction']>[0]>[0]
@@ -58,12 +66,20 @@ export async function carregarAchado(db: Executor, id: string) {
       },
       responsavel: { id: responsavel.id, nome: responsavel.nome },
       registradoPor: { id: registradoPor.id, nome: registradoPor.nome },
+      ativo: {
+        id: ativos.id,
+        nome: ativos.nome,
+        tipo: ativos.tipo,
+        identificador: ativos.identificador,
+        ambiente: ativos.ambiente,
+      },
     })
     .from(achados)
     .innerJoin(projetos, eq(projetos.id, achados.projetoId))
     .innerJoin(registradoPor, eq(registradoPor.id, achados.registradoPorId))
     .leftJoin(responsavel, eq(responsavel.id, achados.responsavelId))
     .leftJoin(categoriasOwasp, eq(categoriasOwasp.id, achados.categoriaOwaspId))
+    .leftJoin(ativos, eq(ativos.id, achados.ativoId))
     .where(eq(achados.id, id))
   if (!linha) throw new RecursoNaoEncontradoError('Achado não encontrado.')
   return linha
@@ -104,6 +120,7 @@ export function formatarAchado(c: AchadoCarregado, usuario: UsuarioSessao, hoje 
     dataLimiteManual: a.dataLimiteManual,
     vencido: estaVencido(a, hoje),
     projeto: c.projeto,
+    ativo: c.ativo,
     responsavel: c.responsavel,
     registradoPor: c.registradoPor,
     criadoEm: a.criadoEm,
@@ -172,6 +189,7 @@ function valoresParaBanco(e: Omit<EntradaCriarAchado, 'responsavelId' | 'dataLim
     passosReproducao: e.passosReproducao,
     correcaoProposta: e.correcaoProposta,
     categoriaOwaspId: e.categoriaOwaspId,
+    ativoId: e.ativoId,
     cweId: e.cweId,
     cveId: e.cveId,
     notaCvss: e.notaCvss === null ? null : e.notaCvss.toFixed(1),
@@ -204,6 +222,7 @@ export async function registrarAchado(
     }
 
     await descreverCategoria(tx, entrada.categoriaOwaspId)
+    await descreverAtivoDoProjeto(tx, entrada.ativoId, projetoId)
     const resp = entrada.responsavelId
       ? await buscarResponsavelAtivo(tx, entrada.responsavelId)
       : null
@@ -294,13 +313,18 @@ export async function editarAchado(
       passosReproducao: a.passosReproducao,
       correcaoProposta: a.correcaoProposta,
       categoriaOwasp: await descreverCategoria(tx, a.categoriaOwaspId),
+      ativo: await descreverAtivoDoProjeto(tx, a.ativoId, a.projetoId),
       cweId: a.cweId,
       cveId: a.cveId,
       notaCvss: a.notaCvss,
       dataLimite: a.dataLimite,
     }
-    const { categoriaOwaspId, dataLimiteManual: _manual, ...resto } = novos
-    const depois = { ...resto, categoriaOwasp: await descreverCategoria(tx, categoriaOwaspId) }
+    const { categoriaOwaspId, ativoId, dataLimiteManual: _manual, ...resto } = novos
+    const depois = {
+      ...resto,
+      categoriaOwasp: await descreverCategoria(tx, categoriaOwaspId),
+      ativo: await descreverAtivoDoProjeto(tx, ativoId, a.projetoId),
+    }
     const eventos = diferencasDeCampos(antes, depois)
     if (eventos.length === 0) return
 

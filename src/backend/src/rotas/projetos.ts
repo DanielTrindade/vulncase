@@ -1,5 +1,6 @@
 import { Hono } from 'hono'
 import {
+  esquemaAtivo,
   esquemaCriarAchado,
   esquemaFiltroProjetos,
   esquemaProjeto,
@@ -10,6 +11,7 @@ import { analistaOuAdministrador } from '../middlewares/autorizacao.js'
 import { usuarioAtual } from '../middlewares/sessao.js'
 import { validar } from '../middlewares/validacao.js'
 import { registrarAchado } from '../servicos/achados.js'
+import { criarAtivo, listarAtivos } from '../servicos/ativos.js'
 import { painelProjeto } from '../servicos/painel.js'
 import { gerarRelatorioCsv } from '../servicos/relatorio-csv.js'
 import {
@@ -55,6 +57,26 @@ export const rotasProjetos = new Hono<Ambiente>()
       'Cache-Control': 'no-store',
     })
   })
+  .get('/:id/ativos', validar('param', paramId), async (c) =>
+    c.json({ itens: await listarAtivos(c.get('deps').db, c.req.valid('param').id) }, 200),
+  )
+  .post(
+    '/:id/ativos',
+    analistaOuAdministrador(),
+    validar('param', paramId),
+    validar('json', esquemaAtivo),
+    async (c) =>
+      c.json(
+        await criarAtivo(
+          c.get('deps').db,
+          c.get('log'),
+          usuarioAtual(c),
+          c.req.valid('param').id,
+          c.req.valid('json'),
+        ),
+        201,
+      ),
+  )
   .get('/:id/painel', validar('param', paramId), async (c) =>
     c.json(await painelProjeto(c.get('deps').db, c.req.valid('param').id), 200),
   )

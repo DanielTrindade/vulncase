@@ -8,6 +8,7 @@ export const PARAMETROS_FILTRO = [
   'responsavelId',
   'semResponsavel',
   'categoriaOwaspId',
+  'ativoId',
   'vencido',
   'busca',
   'ordenarPor',

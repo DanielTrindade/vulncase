@@ -4,6 +4,7 @@ import { useProjeto } from '../../api/projetos'
 import { useSessao } from '../../auth/sessao'
 import { Carregando, MensagemErro } from '../../componentes/estado'
 import { Painel } from '../../componentes/painel'
+import { Ativos } from './Ativos'
 
 export function PaginaProjeto() {
   const { id } = useParams()
@@ -60,6 +61,9 @@ export function PaginaProjeto() {
       ) : (
         <Painel dados={painel.data} projetoId={p.id} />
       )}
+      <div style={{ marginTop: '1rem' }}>
+        <Ativos projetoId={p.id} podeGerenciar={podeGerenciar} />
+      </div>
     </section>
   )
 }

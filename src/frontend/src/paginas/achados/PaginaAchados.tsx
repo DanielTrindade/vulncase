@@ -8,7 +8,7 @@ import {
   type CampoOrdenacao,
 } from '@vulncase/compartilhado'
 import { useAchados, useCategoriasOwasp } from '../../api/achados'
-import { useProjetos } from '../../api/projetos'
+import { useAtivos, useProjetos } from '../../api/projetos'
 import { useResponsaveis } from '../../api/usuarios'
 import { useSessao, useUsuario } from '../../auth/sessao'
 import { formatarData } from '../../componentes/datas'
@@ -31,6 +31,7 @@ export function PaginaAchados() {
   const achados = useAchados(consulta)
   const projetos = useProjetos(false)
   const categorias = useCategoriasOwasp()
+  const ativos = useAtivos(params.get('projetoId') ?? undefined)
   const responsaveis = useResponsaveis(gestor)
   const { campo, ordem } = ordenacaoDaUrl(params)
 
@@ -81,7 +82,7 @@ export function PaginaAchados() {
             <span>Projeto</span>
             <select
               value={params.get('projetoId') ?? ''}
-              onChange={(e) => alterar({ projetoId: e.target.value || null })}
+              onChange={(e) => alterar({ projetoId: e.target.value || null, ativoId: null })}
             >
               <option value="">Todos os projetos ativos</option>
               {projetos.data?.map((p) => (
@@ -91,6 +92,22 @@ export function PaginaAchados() {
               ))}
             </select>
           </label>
+          {params.get('projetoId') && (ativos.data?.length ?? 0) > 0 && (
+            <label className="filtros__campo">
+              <span>Ativo</span>
+              <select
+                value={params.get('ativoId') ?? ''}
+                onChange={(e) => alterar({ ativoId: e.target.value || null })}
+              >
+                <option value="">Todos</option>
+                {ativos.data?.map((a) => (
+                  <option key={a.id} value={a.id}>
+                    {a.nome}
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
           {gestor ? (
             <label className="filtros__campo">
               <span>Responsável</span>
