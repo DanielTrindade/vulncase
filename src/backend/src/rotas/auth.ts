@@ -1,9 +1,10 @@
 import { Hono } from 'hono'
-import { esquemaLogin } from '@vulncase/compartilhado'
+import { esquemaLogin, esquemaTrocarSenha } from '@vulncase/compartilhado'
 import type { Ambiente } from '../ambiente.js'
 import { apagarCookieSessao, gravarCookieSessao, usuarioAtual } from '../middlewares/sessao.js'
 import { validar } from '../middlewares/validacao.js'
 import { entrar, sair } from '../servicos/autenticacao.js'
+import { trocarSenha } from '../servicos/usuarios.js'
 
 function ipCliente(cabecalho: string | undefined): string | null {
   // O Caddy acrescenta o IP do cliente em X-Forwarded-For.
@@ -30,3 +31,13 @@ export const rotasAuth = new Hono<Ambiente>()
     return c.body(null, 204)
   })
   .get('/me', (c) => c.json({ usuario: usuarioAtual(c) }, 200))
+  .put('/senha', validar('json', esquemaTrocarSenha), async (c) => {
+    await trocarSenha(
+      c.get('deps').db,
+      c.get('log'),
+      usuarioAtual(c),
+      c.get('sessaoId'),
+      c.req.valid('json'),
+    )
+    return c.body(null, 204)
+  })

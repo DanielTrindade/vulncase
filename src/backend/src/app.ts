@@ -5,6 +5,7 @@ import { registrarRequisicao } from './middlewares/requisicao.js'
 import { cabecalhosSeguranca, limitarCorpo, verificarOrigem } from './middlewares/seguranca.js'
 import { carregarSessao, exigirSessao } from './middlewares/sessao.js'
 import { rotasAuth } from './rotas/auth.js'
+import { rotasUsuarios } from './rotas/usuarios.js'
 
 /**
  * Composição da aplicação (docs/04-arquitetura.md, Listagem 1). A ordem garante que
@@ -21,6 +22,7 @@ export function criarApp(deps: Dependencias) {
     .use('/api/*', exigirSessao())
     .get('/api/health', (c) => c.json({ status: 'ok' as const }))
     .route('/api/auth', rotasAuth)
+    .route('/api/usuarios', rotasUsuarios)
 
   app.onError(tratarErro)
   app.notFound(naoEncontrado)
