@@ -35,6 +35,25 @@ O Caddy emite um certificado de uma autoridade local; o navegador exibirá um av
 
 Serviços: `db` (PostgreSQL 17), `api` (Hono), `web` (arquivos estáticos do React) e `proxy` (Caddy, único serviço com portas publicadas). O volume `evidencias` é montado apenas na API e não é servido pelo proxy.
 
+### Dados de demonstração
+
+A carga cria um usuário de cada papel e os projetos `REDE`, `WEB` e `COD`, com achados em todos os status e severidades e histórico coerente (documento 06, seção 3). Ela só roda com `NODE_ENV=development` e não repete a carga se os projetos já existirem.
+
+```bash
+# no .env: NODE_ENV=development
+docker compose exec api node dist/seed-cli.js
+```
+
+Fora do Docker: `pnpm --filter @vulncase/backend db:seed`.
+
+| E-mail | Papel |
+|---|---|
+| `admin@demo.vulncase.local` | Administrador |
+| `analista@demo.vulncase.local` | Analista |
+| `dev@demo.vulncase.local` | Desenvolvedor |
+
+A senha é a da variável `DEMO_SENHA`; sem ela, `demo-vulncase-2026`. Use apenas em ambiente local.
+
 ### Desenvolvimento
 
 ```bash
