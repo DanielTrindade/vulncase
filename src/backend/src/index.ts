@@ -3,6 +3,7 @@ import { criarApp } from './app.js'
 import { carregarConfig, ConfiguracaoInvalidaError } from './config.js'
 import { criarBanco } from './db/cliente.js'
 import { aplicarMigrations } from './db/migrar.js'
+import { criarAdministradorInicial } from './db/admin-inicial.js'
 import { criarLog } from './infra/log.js'
 
 async function iniciar(): Promise<void> {
@@ -23,6 +24,7 @@ async function iniciar(): Promise<void> {
 
   await aplicarMigrations(db)
   log.info('migrations aplicadas')
+  await criarAdministradorInicial(db, config, log)
 
   const app = criarApp({ db, config, log })
   const servidor = serve({ fetch: app.fetch, port: config.porta }, (info) => {
