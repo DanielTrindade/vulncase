@@ -21,8 +21,10 @@
     "@hono/zod-validator": "^0.9.1",
     "@node-rs/argon2": "^2.2.2",
     "@vulncase/compartilhado": "workspace:*",
+    "dejavu-fonts-ttf": "^2.37.3",
     "drizzle-orm": "^0.45.4",
     "hono": "^4.13.22",
+    "pdfkit": "^0.21.0",
     "pg": "^8.23.1",
     "pino": "^10.4.0",
     "zod": "^4.6.7"
@@ -30,6 +32,7 @@
   "devDependencies": {
     "@testcontainers/postgresql": "^12.2.2",
     "@types/node": "^24.10.0",
+    "@types/pdfkit": "^0.17.7",
     "@types/pg": "^8.23.1",
     "@vitest/coverage-v8": "^4.1.12",
     "drizzle-kit": "^0.31.11",

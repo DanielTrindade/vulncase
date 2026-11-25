@@ -35,6 +35,9 @@ export function PaginaProjeto() {
           <a href={`/api/projetos/${p.id}/relatorio.csv`} className="botao" download>
             Exportar CSV
           </a>
+          <a href={`/api/projetos/${p.id}/relatorio.pdf`} className="botao" download>
+            Relatório PDF
+          </a>
           {podeGerenciar && (
             <>
               <Link to={`/projetos/${p.id}/editar`} className="botao">

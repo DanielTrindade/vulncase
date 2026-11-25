@@ -14,6 +14,7 @@ import { registrarAchado } from '../servicos/achados.js'
 import { criarAtivo, listarAtivos } from '../servicos/ativos.js'
 import { painelProjeto } from '../servicos/painel.js'
 import { gerarRelatorioCsv } from '../servicos/relatorio-csv.js'
+import { gerarRelatorioPdf } from '../servicos/relatorio-pdf.js'
 import {
   arquivarProjeto,
   criarProjeto,
@@ -77,6 +78,24 @@ export const rotasProjetos = new Hono<Ambiente>()
         201,
       ),
   )
+  .get('/:id/relatorio.pdf', validar('param', paramId), async (c) => {
+    const usuario = usuarioAtual(c)
+    const { pdf, nomeArquivo } = await gerarRelatorioPdf(
+      c.get('deps').db,
+      c.req.valid('param').id,
+      usuario,
+    )
+    c.get('log').info({
+      evento: 'relatorio.pdf',
+      usuarioId: usuario.id,
+      projetoId: c.req.valid('param').id,
+    })
+    return c.body(new Uint8Array(pdf), 200, {
+      'Content-Type': 'application/pdf',
+      'Content-Disposition': `attachment; filename="${nomeArquivo}"`,
+      'Cache-Control': 'no-store',
+    })
+  })
   .get('/:id/painel', validar('param', paramId), async (c) =>
     c.json(await painelProjeto(c.get('deps').db, c.req.valid('param').id), 200),
   )
