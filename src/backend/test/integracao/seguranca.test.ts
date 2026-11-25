@@ -18,6 +18,8 @@ describe('cabeçalhos de segurança (RNF10)', () => {
     expect(res.headers.get('x-content-type-options')).toBe('nosniff')
     expect(res.headers.get('referrer-policy')).toBe('no-referrer')
     expect(res.headers.get('x-frame-options')).toBe('DENY')
+    expect(csp).not.toContain('unsafe-inline')
+    expect(res.headers.get('cache-control')).toBe('no-cache, no-store, must-revalidate')
   })
 
   it('aplica os cabeçalhos também nas respostas de erro', async () => {

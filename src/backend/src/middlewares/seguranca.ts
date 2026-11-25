@@ -8,14 +8,14 @@ export const LIMITE_CORPO_JSON = 64 * 1024
 
 /**
  * Cabeçalhos de segurança (RNF10). A CSP não permite scripts inline nem de outras
- * origens; estilos inline são aceitos apenas para bibliotecas de gráficos.
+ * origens, nem estilos em elementos <style> ou atributos style no HTML.
  */
 export function cabecalhosSeguranca() {
   const aplicar = secureHeaders({
     contentSecurityPolicy: {
       defaultSrc: ["'self'"],
       scriptSrc: ["'self'"],
-      styleSrc: ["'self'", "'unsafe-inline'"],
+      styleSrc: ["'self'"],
       imgSrc: ["'self'", 'data:'],
       connectSrc: ["'self'"],
       fontSrc: ["'self'"],
@@ -40,6 +40,10 @@ export function cabecalhosSeguranca() {
       cspDaRota = c.res.headers.get('Content-Security-Policy')
     })
     if (cspDaRota) c.res.headers.set('Content-Security-Policy', cspDaRota)
+    // Respostas da API contêm dados confidenciais (detalhes de exploração): sem cache.
+    if (!c.res.headers.has('Cache-Control')) {
+      c.res.headers.set('Cache-Control', 'no-cache, no-store, must-revalidate')
+    }
   })
 }
 

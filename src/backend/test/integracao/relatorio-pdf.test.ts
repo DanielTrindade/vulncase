@@ -23,9 +23,11 @@ describe('GET /api/projetos/{id}/relatorio.pdf', () => {
       const res = await t.requisitar(`/api/projetos/${p.id}/relatorio.pdf`, { cookie })
       expect(res.status).toBe(200)
       expect(res.headers.get('content-type')).toBe('application/pdf')
-      expect(res.headers.get('content-disposition')).toMatch(
-        new RegExp(`^attachment; filename="${p.prefixo}-relatorio-`),
-      )
+      expect(
+        res.headers
+          .get('content-disposition')
+          ?.startsWith(`attachment; filename="${p.prefixo}-relatorio-`),
+      ).toBe(true)
       const bytes = new Uint8Array(await res.arrayBuffer())
       expect(new TextDecoder().decode(bytes.slice(0, 5))).toBe('%PDF-')
       expect(bytes.byteLength).toBeGreaterThan(5000)

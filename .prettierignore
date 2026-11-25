@@ -3,3 +3,5 @@ dist/
 coverage/
 src/backend/drizzle/
 *.md
+docs/verificacao/zap-baseline.html
+docs/verificacao/*.json

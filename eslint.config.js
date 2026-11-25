@@ -41,7 +41,11 @@ export default tseslint.config(
         document: 'readonly',
       },
     },
-    rules: { '@typescript-eslint/no-require-imports': 'off' },
+    rules: {
+      '@typescript-eslint/no-require-imports': 'off',
+      // Os caminhos vêm da linha de comando de quem executa o script.
+      'security/detect-non-literal-fs-filename': 'off',
+    },
   },
   {
     // Testes leem arquivos do próprio repositório; os caminhos não vêm de usuários.

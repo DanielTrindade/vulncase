@@ -118,7 +118,10 @@ const ACHADOS = [
   },
 ]
 ;(async () => {
-  const b = await chromium.launch()
+  // CHROMIUM_PATH permite usar um Chromium já instalado no sistema.
+  const b = await chromium.launch(
+    process.env.CHROMIUM_PATH ? { executablePath: process.env.CHROMIUM_PATH } : {},
+  )
   // 1
   const adm = await (await novoContexto(b)).newPage()
   await entrar(adm, 'admin@vulncase.local', 'admin-senha-inicial-123')

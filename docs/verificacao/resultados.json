@@ -1,0 +1,77 @@
+{
+  "executadoEm": "2026-11-25T15:14:18.087Z",
+  "resultados": [
+    {
+      "id": "T1",
+      "nome": "XSS armazenado nos campos de texto",
+      "aprovado": true,
+      "evidencias": [
+        "Cargas em título, descrição, impacto, passos, correção, localização, comentário, nome e descrição do projeto e ativo: 5 variações.",
+        "Páginas visitadas: /, /projetos, /projetos/78799de7-0486-4efd-9a82-767cb860e083, /achados?projetoId=78799de7-0486-4efd-9a82-767cb860e083, /achados/6cb66017-39f3-4b8e-ad0e-41e994bc2004, /achados/6cb66017-39f3-4b8e-ad0e-41e994bc2004/editar.",
+        "Diálogos JavaScript disparados: 0; elementos injetados: nenhum.",
+        "Título exibido literalmente: \"<script>alert('xss-script')</script>\".",
+        "CSP da aplicação: default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; font-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'."
+      ]
+    },
+    {
+      "id": "T2",
+      "nome": "SQL Injection nos parâmetros de filtro",
+      "aprovado": true,
+      "evidencias": [
+        "busca (texto livre, 6 cargas, incluindo pg_sleep(5)): 200/total 0/11 ms; 200/total 0/9 ms; 200/total 0/6 ms; 200/total 0/7 ms; 200/total 0/7 ms; 200/total 0/8 ms.",
+        "Parâmetros tipados (11 cargas): projetoId=400, status=400, severidade=400, ordenarPor=400, ordenarPor=400, ordem=400, categoriaOwaspId=400, tamanhoPagina=400, pagina=400, vencido=400, responsavelId=400.",
+        "Total de achados antes e depois: 1 e 1."
+      ]
+    },
+    {
+      "id": "T3",
+      "nome": "Rotas de Analista e Administrador chamadas com sessão de Desenvolvedor",
+      "aprovado": true,
+      "evidencias": [
+        "GET /api/usuarios → 403",
+        "POST /api/usuarios → 403",
+        "PATCH /api/usuarios/{id} → 403",
+        "PATCH /api/usuarios/{id} → 403",
+        "GET /api/usuarios/responsaveis → 403",
+        "POST /api/projetos → 403",
+        "PUT /api/projetos/{id} → 403",
+        "POST /api/projetos/{id}/arquivar → 403",
+        "POST /api/projetos/{id}/ativos → 403",
+        "POST /api/projetos/{id}/achados → 403",
+        "PUT /api/achados/{id} → 403",
+        "PUT /api/achados/{id}/responsavel → 403",
+        "POST /api/achados/{id}/transicoes → 403",
+        "POST /api/achados/{id}/transicoes → 403",
+        "POST /api/achados/{id}/transicoes → 403",
+        "POST /api/achados/{id}/transicoes → 403",
+        "POST /api/achados/{id}/comentarios → 403",
+        "Administradores após o teste: 1."
+      ]
+    },
+    {
+      "id": "T4",
+      "nome": "Envio de .html renomeado para .png",
+      "aprovado": true,
+      "evidencias": [
+        "pagina.png → 415",
+        "vetor.png → 415",
+        "programa.pdf → 415",
+        "pagina.html → 415",
+        "imagem.svg → 415",
+        "captura.png.html → 415",
+        "Evidências gravadas: 0."
+      ]
+    },
+    {
+      "id": "T5",
+      "nome": "Requisição de alteração a partir de outra origem",
+      "aprovado": true,
+      "evidencias": [
+        "POST /api/projetos com Origin https://atacante.example e sessão de administrador → 403.",
+        "POST /api/projetos sem Origin nem Sec-Fetch-Site → 403.",
+        "Página em https://atacante.example com fetch JSON (credentials: include) → bloqueado pelo navegador; formulário text/plain autoenviado → respostas da API: 403.",
+        "Projetos criados pelas tentativas: 0 (antes 2, depois 2)."
+      ]
+    }
+  ]
+}

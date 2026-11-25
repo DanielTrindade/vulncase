@@ -14,7 +14,9 @@
     "format:check": "prettier --check .",
     "typecheck": "pnpm -r typecheck",
     "test": "pnpm -r test",
-    "aceite": "node scripts/roteiro-aceite.cjs docs/aceite"
+    "aceite": "node scripts/roteiro-aceite.cjs docs/aceite",
+    "verificacao": "node scripts/verificacao-seguranca.cjs docs/verificacao/resultados.json",
+    "verificacao:registrar": "node scripts/registrar-verificacao.cjs docs/verificacao/resultados.json docs/verificacao"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.0",

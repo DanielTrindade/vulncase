@@ -81,3 +81,5 @@ Antes da apresentação final, a equipe executa sobre o próprio VulnCase os tes
 4. envio de arquivo `.html` renomeado para `.png`;
 5. requisição de alteração enviada a partir de outra origem;
 6. verificação dos cabeçalhos de segurança com o OWASP ZAP em modo passivo.
+
+Resultados da execução: [documento 08](08-verificacao-de-seguranca.md).

@@ -1,6 +1,8 @@
 # Proxy reverso: front-end e API na mesma origem, com HTTPS local (CA interna do Caddy).
 {
 	admin off
+	# Clientes que não enviam SNI para "localhost" (ex.: Java/OWASP ZAP) recebem o certificado do site.
+	default_sni localhost
 }
 
 localhost {
@@ -10,8 +12,11 @@ localhost {
 		max_size 6MB
 	}
 
-	# Não anuncia o servidor.
-	header -Server
+	# Não anuncia o servidor; HSTS também nas respostas do front-end.
+	header {
+		-Server
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+	}
 
 	handle /api/* {
 		reverse_proxy api:3000

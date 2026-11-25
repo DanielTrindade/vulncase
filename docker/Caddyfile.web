@@ -5,7 +5,7 @@
 
 	# Mesmos cabeçalhos de segurança da API (RNF10).
 	header {
-		Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; font-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
+		Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; font-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
 		X-Content-Type-Options "nosniff"
 		X-Frame-Options "DENY"
 		Referrer-Policy "no-referrer"
@@ -13,10 +13,12 @@
 		-Server
 	}
 
-	# index.html nunca é armazenado em cache; os arquivos com hash podem ser.
+	# Arquivos com hash no nome podem ficar em cache; todo o resto (index.html servido
+	# para qualquer rota da SPA) não é armazenado.
 	@estaticos path /assets/*
 	header @estaticos Cache-Control "public, max-age=31536000, immutable"
-	header /index.html Cache-Control "no-store"
+	@dinamicos not path /assets/*
+	header @dinamicos Cache-Control "no-cache, no-store, must-revalidate"
 
 	try_files {path} /index.html
 	file_server

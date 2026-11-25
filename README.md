@@ -17,6 +17,7 @@ O VulnCase centraliza os achados de segurança de um projeto em um único fluxo:
 | [05 — Modelo de ameaças](docs/05-modelo-de-ameacas.md) | Análise STRIDE da própria ferramenta e controles adotados |
 | [06 — Plano de entregas](docs/06-plano-de-entregas.md) | Entregas incrementais, backlog por entrega e roteiro de demonstração |
 | [07 — Critérios de aceite](docs/07-criterios-de-aceite.md) | Execução do roteiro de aceite do MVP, com capturas de tela |
+| [08 — Verificação de segurança](docs/08-verificacao-de-seguranca.md) | Testes de segurança da própria ferramenta, OWASP ZAP, dependências e segredos |
 
 ## Como executar
 
