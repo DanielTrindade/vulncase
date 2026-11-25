@@ -1,44 +1,38 @@
 import { cloneElement, useId, type ReactElement, type ReactNode } from 'react'
+import { Field, FieldDescription, FieldError, FieldLabel } from '@/componentes/ui/field'
 
 interface PropsCampo {
   rotulo: string
   erro?: string | undefined
   ajuda?: ReactNode
   obrigatorio?: boolean
+  className?: string
   children: ReactElement<{ id?: string; 'aria-invalid'?: boolean; 'aria-describedby'?: string }>
 }
 
-/** Rótulo, controle, ajuda e mensagem de erro com os atributos de acessibilidade. */
-export function Campo({ rotulo, erro, ajuda, obrigatorio, children }: PropsCampo) {
+/** Rótulo, controle, ajuda e erro (componente Field do shadcn/ui) com acessibilidade. */
+export function Campo({ rotulo, erro, ajuda, obrigatorio, className, children }: PropsCampo) {
   const id = useId()
   const idAjuda = `${id}-ajuda`
   const idErro = `${id}-erro`
   const descritores = [ajuda ? idAjuda : null, erro ? idErro : null].filter(Boolean).join(' ')
   return (
-    <div className="campo">
-      <label className="campo__rotulo" htmlFor={id}>
+    <Field data-invalid={erro ? true : undefined} className={className}>
+      <FieldLabel htmlFor={id}>
         {rotulo}
         {obrigatorio && (
-          <span className="campo__obrigatorio" aria-hidden="true">
+          <span aria-hidden className="text-destructive">
             *
           </span>
         )}
-      </label>
+      </FieldLabel>
       {cloneElement(children, {
         id,
         'aria-invalid': erro ? true : undefined,
         'aria-describedby': descritores || undefined,
       })}
-      {ajuda && (
-        <span id={idAjuda} className="campo__ajuda">
-          {ajuda}
-        </span>
-      )}
-      {erro && (
-        <span id={idErro} className="campo__erro">
-          {erro}
-        </span>
-      )}
-    </div>
+      {ajuda && !erro && <FieldDescription id={idAjuda}>{ajuda}</FieldDescription>}
+      {erro && <FieldError id={idErro}>{erro}</FieldError>}
+    </Field>
   )
 }

@@ -9,6 +9,7 @@ Execução do roteiro da [seção 10 do documento 01](01-visao-e-escopo.md#10-cr
 | Configuração | `.env` copiado do exemplo, `NODE_ENV=production`, administrador inicial por `ADMIN_EMAIL_INICIAL`/`ADMIN_SENHA_INICIAL` |
 | Execução | Interface operada pelo Playwright com o script [`scripts/roteiro-aceite.cjs`](../scripts/roteiro-aceite.cjs) (`pnpm aceite`) |
 | Resultado | **8 de 8 passos aprovados**; nenhuma falha encontrada, portanto nenhuma issue aberta |
+| Reexecução | 25/11/2026, após o redesenho da interface ([documento 09](09-design-da-interface.md)), em ambiente zerado com `NODE_ENV=development`: 8 de 8 aprovados. As capturas abaixo são dessa reexecução. |
 
 ## Resultado por passo
 
@@ -23,7 +24,7 @@ A Tabela 1 apresenta o resultado de cada passo do roteiro, com a evidência corr
 | 3 | O analista atribui dois achados ao desenvolvedor e os move para "Em correção". | Aprovado | `LAB-0001` e `LAB-0003` atribuídos a Davi e em correção. [Captura](aceite/03-dois-em-correcao.jpg) |
 | 4 | O desenvolvedor entra, vê apenas as ações permitidas ao seu papel e move um achado para "Aguardando verificação". | Aprovado | Menu sem "Usuários"; nenhuma ação em achado não atribuído; apenas "Concluir correção" no próprio. `LAB-0001` movido com justificativa. [Ações](aceite/04a-desenvolvedor-acoes-permitidas.jpg), [resultado](aceite/04b-aguardando-verificacao.jpg) |
 | 5 | O analista verifica a correção e encerra o achado como "Corrigido"; outro achado é marcado como "Falso positivo" com justificativa. | Aprovado | `LAB-0001` Corrigido; `LAB-0002` Falso positivo. [Captura](aceite/05-falso-positivo.jpg) |
-| 6 | O painel do projeto mostra as contagens corretas por severidade e status. | Aprovado | Total 5, abertos 3, sem responsável 2, vencidos 0. Severidade: Crítica 1, Alta 1, Média 2, Baixa 1, Informativa 0. Status: Aberto 2, Em correção 1, Aguardando verificação 0, Corrigido 1, Falso positivo 1, Risco aceito 0 — iguais à contagem manual. [Captura](aceite/06-painel-do-projeto.jpg) |
+| 6 | O painel do projeto mostra as contagens corretas por severidade e status. | Aprovado | Total 5, abertos 3, sem responsável 2, vencidos 0. Severidade: Crítica 1, Alta 1, Média 2, Baixa 1, Informativa 0. Status: Aberto 2, Em correção 1, Aguardando verificação 0, Corrigido 1, Falso positivo 1, Risco aceito 0 — iguais à contagem manual. Na tela, a faixa de severidade mostra os abertos (Crítica 1, Alta 0, Média 1, Baixa 1, Informativa 0) e o ciclo de correção mostra Aberto 2, Em correção 1, Aguardando verificação 0 e Encerrados 2, conferidos pelo roteiro. [Captura](aceite/06-painel-do-projeto.jpg) |
 | 7 | O histórico do achado encerrado mostra todas as transições, com usuário e data. | Aprovado | `LAB-0001`: registro, atribuição, Aberto → Em correção (Ana), Em correção → Aguardando verificação (Davi, com justificativa), Aguardando verificação → Corrigido (Ana), todos com data e hora. [Captura](aceite/07-historico-do-encerrado.jpg) |
 | 8 | Uma tentativa do desenvolvedor de executar uma ação reservada ao analista, feita diretamente na API, retorna HTTP 403. | Aprovado | `POST /api/achados/{id}/transicoes` com destino `FalsoPositivo` → 403 "Seu papel não permite executar esta transição."; `POST /api/projetos` → 403. |
 

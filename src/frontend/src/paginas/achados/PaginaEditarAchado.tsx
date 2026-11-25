@@ -1,6 +1,9 @@
-import { useParams } from 'react-router'
-import { useAchado } from '../../api/achados'
-import { Carregando, MensagemErro } from '../../componentes/estado'
+import { Link, useParams } from 'react-router'
+import { CircleAlertIcon } from 'lucide-react'
+import { useAchado } from '@/api/achados'
+import { CabecalhoPagina } from '@/componentes/cabecalho'
+import { Carregando, MensagemErro } from '@/componentes/estado'
+import { Alert, AlertDescription } from '@/componentes/ui/alert'
 import { FormularioAchado } from './FormularioAchado'
 
 export function PaginaEditarAchado() {
@@ -11,28 +14,32 @@ export function PaginaEditarAchado() {
   const a = achado.data
   if (!a.acoes.editar) {
     return (
-      <div className="alerta alerta--aviso">
-        Este achado não pode ser editado
-        {a.encerradoEm ? ' porque está encerrado. Reabra-o primeiro.' : '.'}
-      </div>
+      <Alert>
+        <CircleAlertIcon />
+        <AlertDescription>
+          Este achado não pode ser editado
+          {a.encerradoEm ? ' porque está encerrado. Reabra-o primeiro.' : '.'}
+        </AlertDescription>
+      </Alert>
     )
   }
   return (
-    <section>
-      <div className="cabecalho-pagina">
-        <div>
-          <h1>
-            Editar <span className="mono">{a.codigo}</span>
-          </h1>
-          <p className="cabecalho-pagina__sub">{a.projeto.nome}</p>
-        </div>
-      </div>
+    <>
+      <CabecalhoPagina
+        antes={
+          <Link to={`/achados/${a.id}`} className="font-mono hover:underline">
+            {a.codigo}
+          </Link>
+        }
+        titulo="Editar achado"
+        descricao={a.projeto.nome}
+      />
       <FormularioAchado
         key={a.versao}
         achado={a}
         projetoId={a.projeto.id}
         aoRecarregar={async () => (await achado.refetch()).data}
       />
-    </section>
+    </>
   )
 }

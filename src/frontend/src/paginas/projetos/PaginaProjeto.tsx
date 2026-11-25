@@ -1,9 +1,13 @@
 import { Link, useParams } from 'react-router'
-import { usePainelProjeto } from '../../api/painel'
-import { useProjeto } from '../../api/projetos'
-import { useSessao } from '../../auth/sessao'
-import { Carregando, MensagemErro } from '../../componentes/estado'
-import { Painel } from '../../componentes/painel'
+import { DownloadIcon, FileTextIcon, ListChecksIcon, PencilIcon, PlusIcon } from 'lucide-react'
+import { usePainelProjeto } from '@/api/painel'
+import { useProjeto } from '@/api/projetos'
+import { useSessao } from '@/auth/sessao'
+import { CabecalhoPagina } from '@/componentes/cabecalho'
+import { Carregando, MensagemErro } from '@/componentes/estado'
+import { PainelIndicadores } from '@/componentes/painel'
+import { Badge } from '@/componentes/ui/badge'
+import { Button } from '@/componentes/ui/button'
 import { Ativos } from './Ativos'
 
 export function PaginaProjeto() {
@@ -17,44 +21,67 @@ export function PaginaProjeto() {
   const podeGerenciar = temPapel('Analista', 'Administrador') && !p.arquivado
 
   return (
-    <section>
-      <div className="cabecalho-pagina">
-        <div>
-          <h1>
-            <span className="mono texto-suave">{p.prefixo}</span> {p.nome}
-          </h1>
-          <p className="cabecalho-pagina__sub">
-            Responsável técnico: {p.responsavelTecnico.nome}
-            {p.arquivado && ' · Arquivado'}
-          </p>
-        </div>
-        <div className="acoes">
-          <Link to={`/achados?projetoId=${p.id}`} className="botao">
-            Ver achados
+    <>
+      <CabecalhoPagina
+        antes={
+          <Link to="/projetos" className="hover:underline">
+            Projetos
           </Link>
-          <a href={`/api/projetos/${p.id}/relatorio.csv`} className="botao" download>
-            Exportar CSV
-          </a>
-          <a href={`/api/projetos/${p.id}/relatorio.pdf`} className="botao" download>
-            Relatório PDF
-          </a>
-          {podeGerenciar && (
-            <>
-              <Link to={`/projetos/${p.id}/editar`} className="botao">
-                Editar
+        }
+        titulo={
+          <span className="flex flex-wrap items-center gap-3">
+            <span className="rounded-md bg-primary/10 px-2 py-0.5 font-mono text-lg text-primary">
+              {p.prefixo}
+            </span>
+            {p.nome}
+            {p.arquivado && <Badge variant="secondary">Arquivado</Badge>}
+          </span>
+        }
+        descricao={`Responsável técnico: ${p.responsavelTecnico.nome}`}
+        acoes={
+          <>
+            <Button asChild variant="outline">
+              <Link to={`/achados?projetoId=${p.id}`}>
+                <ListChecksIcon />
+                Ver achados
               </Link>
-              <Link to={`/projetos/${p.id}/achados/novo`} className="botao botao--primario">
-                Novo achado
-              </Link>
-            </>
-          )}
-        </div>
-      </div>
+            </Button>
+            <Button asChild variant="outline">
+              <a href={`/api/projetos/${p.id}/relatorio.csv`} download>
+                <DownloadIcon />
+                Exportar CSV
+              </a>
+            </Button>
+            <Button asChild variant="outline">
+              <a href={`/api/projetos/${p.id}/relatorio.pdf`} download>
+                <FileTextIcon />
+                Relatório PDF
+              </a>
+            </Button>
+            {podeGerenciar && (
+              <>
+                <Button asChild variant="outline">
+                  <Link to={`/projetos/${p.id}/editar`}>
+                    <PencilIcon />
+                    Editar
+                  </Link>
+                </Button>
+                <Button asChild>
+                  <Link to={`/projetos/${p.id}/achados/novo`}>
+                    <PlusIcon />
+                    Novo achado
+                  </Link>
+                </Button>
+              </>
+            )}
+          </>
+        }
+      />
 
       {p.descricao && (
-        <div className="cartao" style={{ marginBottom: '1rem' }}>
-          <p className="texto-pre">{p.descricao}</p>
-        </div>
+        <p className="texto-pre mb-6 max-w-[75ch] text-[15px] leading-relaxed text-muted-foreground">
+          {p.descricao}
+        </p>
       )}
 
       {painel.isPending ? (
@@ -62,11 +89,12 @@ export function PaginaProjeto() {
       ) : painel.isError ? (
         <MensagemErro erro={painel.error} />
       ) : (
-        <Painel dados={painel.data} projetoId={p.id} />
+        <PainelIndicadores dados={painel.data} projetoId={p.id} />
       )}
-      <div style={{ marginTop: '1rem' }}>
+
+      <div className="mt-5">
         <Ativos projetoId={p.id} podeGerenciar={podeGerenciar} />
       </div>
-    </section>
+    </>
   )
 }

@@ -37,7 +37,8 @@ flowchart LR
 | Front-end | React + Vite | Interface. |
 | Requisições no front-end | Cliente `hc` do Hono + TanStack Query | Chamadas tipadas a partir das rotas; *cache* e invalidação das listagens. |
 | Formulários | React Hook Form + esquemas Zod compartilhados | Validação no cliente para usabilidade; a validação de segurança permanece no back-end. |
-| Gráficos do painel | Recharts | Barras por severidade e status. |
+| Componentes de interface | shadcn/ui (Radix UI) com Tailwind CSS v4 | Sistema de design comum, acessível por teclado e leitor de tela, customizado conforme o [documento 09](09-design-da-interface.md). Funciona sob a CSP sem `'unsafe-inline'`: as injeções de `<style>` do Sonner e do Radix Select são removidas no *build* e o CSS equivalente é servido no pacote. |
+| Painel | Componentes próprios | Faixa de severidade, etapas do ciclo e pendências, todos levando à lista filtrada. |
 | Relatório PDF | `pdfkit` com fonte DejaVu embutida | Documento desenhado por código, sem interpretar HTML (RF30). |
 | Testes | Vitest, Testcontainers (PostgreSQL) e Playwright | Testes de domínio sem banco, testes de integração com banco real e roteiros de aceite e de segurança pelo navegador. |
 | Qualidade | ESLint com `eslint-plugin-security`, Prettier, `pnpm audit` e `gitleaks` | Regras contra padrões inseguros (`eval`, `sql.raw`, `dangerouslySetInnerHTML`), formatação e verificação de dependências e segredos no CI. |

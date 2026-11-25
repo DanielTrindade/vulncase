@@ -1,6 +1,9 @@
-import { useParams } from 'react-router'
-import { useProjeto } from '../../api/projetos'
-import { Carregando, MensagemErro } from '../../componentes/estado'
+import { Link, useParams } from 'react-router'
+import { CircleAlertIcon } from 'lucide-react'
+import { useProjeto } from '@/api/projetos'
+import { CabecalhoPagina } from '@/componentes/cabecalho'
+import { Carregando, MensagemErro } from '@/componentes/estado'
+import { Alert, AlertDescription } from '@/componentes/ui/alert'
 import { FormularioAchado } from './FormularioAchado'
 
 export function PaginaNovoAchado() {
@@ -9,19 +12,25 @@ export function PaginaNovoAchado() {
   if (projeto.isPending) return <Carregando />
   if (projeto.isError) return <MensagemErro erro={projeto.error} />
   if (projeto.data.arquivado) {
-    return <div className="alerta alerta--aviso">Projeto arquivado não aceita novos achados.</div>
+    return (
+      <Alert>
+        <CircleAlertIcon />
+        <AlertDescription>Projeto arquivado não aceita novos achados.</AlertDescription>
+      </Alert>
+    )
   }
   return (
-    <section>
-      <div className="cabecalho-pagina">
-        <div>
-          <h1>Novo achado</h1>
-          <p className="cabecalho-pagina__sub">
-            Projeto <span className="mono">{projeto.data.prefixo}</span> — {projeto.data.nome}
-          </p>
-        </div>
-      </div>
+    <>
+      <CabecalhoPagina
+        antes={
+          <Link to={`/projetos/${projeto.data.id}`} className="hover:underline">
+            {projeto.data.nome}
+          </Link>
+        }
+        titulo="Novo achado"
+        descricao={`O código será gerado no projeto ${projeto.data.prefixo}.`}
+      />
       <FormularioAchado projetoId={projeto.data.id} />
-    </section>
+    </>
   )
 }
