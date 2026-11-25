@@ -1,14 +1,15 @@
 import { Link, useParams } from 'react-router'
-import { SEVERIDADES } from '@vulncase/compartilhado'
+import { usePainelProjeto } from '../../api/painel'
 import { useProjeto } from '../../api/projetos'
 import { useSessao } from '../../auth/sessao'
 import { Carregando, MensagemErro } from '../../componentes/estado'
-import { SeloSeveridade } from '../../componentes/selos'
+import { Painel } from '../../componentes/painel'
 
 export function PaginaProjeto() {
   const { id } = useParams()
   const { temPapel } = useSessao()
   const projeto = useProjeto(id)
+  const painel = usePainelProjeto(id ?? '')
   if (projeto.isPending) return <Carregando />
   if (projeto.isError) return <MensagemErro erro={projeto.error} />
   const p = projeto.data
@@ -44,19 +45,18 @@ export function PaginaProjeto() {
       </div>
 
       {p.descricao && (
-        <div className="cartao">
+        <div className="cartao" style={{ marginBottom: '1rem' }}>
           <p className="texto-pre">{p.descricao}</p>
         </div>
       )}
 
-      <div className="cartao">
-        <h2>Achados abertos por severidade</h2>
-        <div className="acoes">
-          {SEVERIDADES.map((s) => (
-            <SeloSeveridade key={s} severidade={s} quantidade={p.abertosPorSeveridade[s]} />
-          ))}
-        </div>
-      </div>
+      {painel.isPending ? (
+        <Carregando />
+      ) : painel.isError ? (
+        <MensagemErro erro={painel.error} />
+      ) : (
+        <Painel dados={painel.data} projetoId={p.id} />
+      )}
     </section>
   )
 }

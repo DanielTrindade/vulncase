@@ -785,3 +785,80 @@ textarea:focus,
   background: var(--superficie-2);
   border-radius: 0 var(--raio) var(--raio) 0;
 }
+
+/* ---------- painel ---------- */
+:root {
+  --grafico-barra: #3a63c9;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --grafico-barra: #6a8de6;
+  }
+}
+.painel {
+  display: grid;
+  gap: 1rem;
+}
+.indicador {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  padding: 1rem 1.25rem;
+  background: var(--superficie);
+  border: 1px solid var(--borda);
+  border-radius: var(--raio);
+  box-shadow: var(--sombra);
+  color: var(--texto);
+  text-decoration: none;
+}
+.indicador:hover {
+  border-color: var(--primaria);
+}
+.indicador__valor {
+  font-size: 2rem;
+  font-weight: 700;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+.indicador__rotulo {
+  color: var(--texto-suave);
+  font-size: 0.9rem;
+}
+.indicador--alerta .indicador__valor {
+  color: var(--perigo);
+}
+.indicador--alerta .indicador__rotulo::before {
+  content: '⚠ ';
+  color: var(--perigo);
+}
+.grafico {
+  margin: 0;
+}
+.grafico__titulo {
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+.grafico__area {
+  width: 100%;
+  min-height: 240px;
+}
+.grafico__tabela {
+  margin-top: 0.5rem;
+  font-size: 0.9rem;
+}
+.grafico__tabela summary {
+  cursor: pointer;
+  color: var(--texto-suave);
+}
+.botao-link {
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  color: var(--primaria);
+  cursor: pointer;
+  text-decoration: underline;
+}
+.grade > .cartao + .cartao {
+  margin-top: 0;
+}
