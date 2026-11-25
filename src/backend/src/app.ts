@@ -7,6 +7,7 @@ import { carregarSessao, exigirSessao } from './middlewares/sessao.js'
 import { rotasAchados } from './rotas/achados.js'
 import { rotasAuth } from './rotas/auth.js'
 import { rotasCategorias } from './rotas/categorias.js'
+import { rotasPainel } from './rotas/painel.js'
 import { rotasProjetos } from './rotas/projetos.js'
 import { rotasUsuarios } from './rotas/usuarios.js'
 
@@ -29,6 +30,7 @@ export function criarApp(deps: Dependencias) {
     .route('/api/projetos', rotasProjetos)
     .route('/api/achados', rotasAchados)
     .route('/api/categorias-owasp', rotasCategorias)
+    .route('/api/painel', rotasPainel)
 
   app.onError(tratarErro)
   app.notFound(naoEncontrado)

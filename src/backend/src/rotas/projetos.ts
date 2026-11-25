@@ -10,6 +10,7 @@ import { analistaOuAdministrador } from '../middlewares/autorizacao.js'
 import { usuarioAtual } from '../middlewares/sessao.js'
 import { validar } from '../middlewares/validacao.js'
 import { registrarAchado } from '../servicos/achados.js'
+import { painelProjeto } from '../servicos/painel.js'
 import {
   arquivarProjeto,
   criarProjeto,
@@ -35,6 +36,9 @@ export const rotasProjetos = new Hono<Ambiente>()
   })
   .get('/:id', validar('param', paramId), async (c) =>
     c.json(await obterProjeto(c.get('deps').db, c.req.valid('param').id), 200),
+  )
+  .get('/:id/painel', validar('param', paramId), async (c) =>
+    c.json(await painelProjeto(c.get('deps').db, c.req.valid('param').id), 200),
   )
   .put(
     '/:id',
