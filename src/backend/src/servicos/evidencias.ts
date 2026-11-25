@@ -173,7 +173,17 @@ export async function obterArquivoEvidencia(
 ) {
   const e = await buscar(db, id)
   await carregarAchado(db, e.achadoId)
-  const conteudo = await armazenamento.ler(e.nomeArmazenado)
+  let conteudo: Buffer
+  try {
+    conteudo = await armazenamento.ler(e.nomeArmazenado)
+  } catch (err) {
+    // Registro sem arquivo no volume (ex.: volume restaurado sem os arquivos).
+    if ((err as NodeJS.ErrnoException).code === 'ENOENT') {
+      log.error({ evento: 'evidencia.arquivo_ausente', evidenciaId: id })
+      throw new RecursoNaoEncontradoError('O arquivo da evidência não está disponível.')
+    }
+    throw err
+  }
   log.info({ evento: 'evidencia.baixada', usuarioId: usuario.id, evidenciaId: id })
   return { evidencia: e, conteudo }
 }

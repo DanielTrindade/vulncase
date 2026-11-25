@@ -243,6 +243,7 @@ export interface AcoesPermitidas {
   editar: boolean
   atribuirResponsavel: boolean
   anexarEvidencia: boolean
+  comentar: boolean
   transicoes: AcaoTransicao[]
 }
 
@@ -271,6 +272,7 @@ export function acoesPermitidas(achado: EstadoAchado, ator: Ator): AcoesPermitid
     editar: aberto && ehGestor(ator),
     atribuirResponsavel: aberto && ehGestor(ator),
     anexarEvidencia: podeColaborar(achado, ator),
+    comentar: podeColaborar(achado, ator),
     transicoes: transicoesPermitidas(achado, ator),
   }
 }

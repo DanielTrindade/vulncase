@@ -376,6 +376,27 @@ describe('matriz de autorização por rota e papel', () => {
         }
       },
     },
+    // ---------- comentários ----------
+    {
+      rota: 'POST /api/achados/:id/comentarios',
+      descricao: 'no achado atribuído a si',
+      esperado: todos(201),
+      montar: async (s) => ({
+        metodo: 'POST',
+        caminho: `/api/achados/${(await achado({ responsavelId: s.usuario.id })).id}/comentarios`,
+        corpo: { texto: 'Corrigido no commit abc123.' },
+      }),
+    },
+    {
+      rota: 'POST /api/achados/:id/comentarios',
+      descricao: 'em achado de outra pessoa',
+      esperado: gestao(201),
+      montar: async () => ({
+        metodo: 'POST',
+        caminho: `/api/achados/${(await achado({ responsavelId: outroDev.usuario.id })).id}/comentarios`,
+        corpo: { texto: 'Comentário.' },
+      }),
+    },
     // ---------- evidências ----------
     {
       rota: 'GET /api/achados/:id/evidencias',

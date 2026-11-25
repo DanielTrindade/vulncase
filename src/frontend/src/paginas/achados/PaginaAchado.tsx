@@ -96,8 +96,8 @@ export function PaginaAchado() {
           </div>
           <Evidencias achado={a} />
           <div className="cartao">
-            <h2>Histórico</h2>
-            <Historico achadoId={a.id} />
+            <h2>Histórico e comentários</h2>
+            <Historico achadoId={a.id} podeComentar={a.acoes.comentar} />
           </div>
         </div>
 

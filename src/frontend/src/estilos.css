@@ -912,3 +912,18 @@ textarea:focus,
   padding-top: 1rem;
   border-top: 1px solid var(--borda);
 }
+.linha-tempo__comentario {
+  margin: 0.35rem 0;
+  padding: 0.5rem 0.75rem;
+  background: var(--primaria-suave);
+  border-radius: var(--raio);
+}
+.linha-tempo__item--Comentario::before {
+  border-color: var(--primaria);
+}
+.comentario-novo {
+  display: grid;
+  gap: 0.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--borda);
+}

@@ -1,5 +1,6 @@
 import { createHash } from 'node:crypto'
-import { readdir } from 'node:fs/promises'
+import { readdir, rm } from 'node:fs/promises'
+import path from 'node:path'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { eq } from 'drizzle-orm'
 import { eventosHistorico, evidencias } from '../../src/db/schema.js'
@@ -206,6 +207,16 @@ describe('evidências', () => {
       expect(cd).not.toMatch(/[\r\n]/)
       expect(res.headers.get('x-injetado')).toBeNull()
       expect(cd.split('filename="')[1]!.split('"')[0]).not.toContain('"')
+    })
+
+    it('arquivo ausente no volume retorna 404, não 500', async () => {
+      const a = await achado()
+      const e = (await (await enviar(analista, a, 'a.txt', TXT)).json()) as Evidencia
+      const [linha] = await t.db.select().from(evidencias).where(eq(evidencias.id, e.id))
+      await rm(path.join(t.diretorioEvidencias, linha!.nomeArmazenado))
+      const res = await t.requisitar(`/api/evidencias/${e.id}/download`, { cookie: dev.cookie })
+      expect(res.status).toBe(404)
+      expect(t.linhas().some((l) => l.evento === 'evidencia.arquivo_ausente')).toBe(true)
     })
 
     it('exige sessão (401) e evidência inexistente retorna 404', async () => {

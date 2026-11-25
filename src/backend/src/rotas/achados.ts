@@ -1,6 +1,7 @@
 import { Hono } from 'hono'
 import {
   esquemaAtribuirResponsavel,
+  esquemaComentario,
   esquemaEditarAchado,
   esquemaFiltroAchados,
   esquemaTransicao,
@@ -17,6 +18,7 @@ import {
   executarTransicao,
 } from '../servicos/achados.js'
 import { listarHistorico } from '../servicos/historico.js'
+import { comentar } from '../servicos/comentarios.js'
 import { anexarEvidencia, listarEvidencias } from '../servicos/evidencias.js'
 import { ValidacaoError } from '../dominio/erros.js'
 import { listarAchados } from '../servicos/listagem-achados.js'
@@ -114,3 +116,18 @@ export const rotasAchados = new Hono<Ambiente>()
     c.header('Location', `/api/evidencias/${evidencia.id}/download`)
     return c.json(evidencia, 201)
   })
+  .post(
+    '/:id/comentarios',
+    validar('param', paramId),
+    validar('json', esquemaComentario),
+    async (c) => {
+      const comentario = await comentar(
+        c.get('deps').db,
+        c.get('log'),
+        usuarioAtual(c),
+        c.req.valid('param').id,
+        c.req.valid('json'),
+      )
+      return c.json(comentario, 201)
+    },
+  )

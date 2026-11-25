@@ -193,6 +193,7 @@ describe('registro, edição e detalhe de achado', () => {
       editar: false,
       atribuirResponsavel: false,
       anexarEvidencia: true,
+      comentar: true,
       transicoes: [],
     })
   })

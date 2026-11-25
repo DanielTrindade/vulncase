@@ -215,3 +215,23 @@ export const evidencias = pgTable(
     check('evidencias_tamanho_ck', sql`${t.tamanhoBytes} BETWEEN 1 AND 5242880`),
   ],
 )
+
+/** Comentários no achado (RF21). Não são editados nem excluídos. */
+export const comentarios = pgTable(
+  'comentarios',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    achadoId: uuid('achado_id')
+      .notNull()
+      .references(() => achados.id),
+    autorId: uuid('autor_id')
+      .notNull()
+      .references(() => usuarios.id),
+    texto: text('texto').notNull(),
+    criadoEm: instante('criado_em').notNull().defaultNow(),
+  },
+  (t) => [
+    index('comentarios_achado_idx').on(t.achadoId, t.criadoEm),
+    check('comentarios_texto_ck', sql`char_length(${t.texto}) BETWEEN 1 AND 4000`),
+  ],
+)

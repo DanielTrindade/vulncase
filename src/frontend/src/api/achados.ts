@@ -150,3 +150,12 @@ export function useRemoverEvidencia(achadoId: string) {
     },
   })
 }
+
+export function useComentar(achadoId: string) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (texto: string) =>
+      ler(api.api.achados[':id'].comentarios.$post({ param: { id: achadoId }, json: { texto } })),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: chavesAchados.historico(achadoId) }),
+  })
+}

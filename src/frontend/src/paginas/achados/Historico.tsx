@@ -6,7 +6,9 @@ import {
   type StatusAchado,
   type OrigemAchado,
 } from '@vulncase/compartilhado'
-import { useHistorico, type EventoHistorico } from '../../api/achados'
+import { useState, type FormEvent } from 'react'
+import { mensagemDeErro } from '../../api/cliente'
+import { useComentar, useHistorico, type EventoHistorico } from '../../api/achados'
 import { formatarData, formatarDataHora } from '../../componentes/datas'
 import { Carregando, MensagemErro, Vazio } from '../../componentes/estado'
 
@@ -63,28 +65,75 @@ function descrever(e: EventoHistorico): string {
   }
 }
 
-export function Historico({ achadoId }: { achadoId: string }) {
+/** Comentário (RF21): o texto vai para o histórico e é exibido como texto. */
+function FormularioComentario({ achadoId }: { achadoId: string }) {
+  const comentar = useComentar(achadoId)
+  const [texto, setTexto] = useState('')
+  async function aoEnviar(e: FormEvent) {
+    e.preventDefault()
+    if (!texto.trim()) return
+    try {
+      await comentar.mutateAsync(texto.trim())
+      setTexto('')
+    } catch {
+      // A mensagem é exibida abaixo; o texto digitado é mantido.
+    }
+  }
+  return (
+    <form className="comentario-novo" onSubmit={(e) => void aoEnviar(e)}>
+      <label className="campo">
+        <span className="campo__rotulo">Comentar</span>
+        <textarea
+          rows={3}
+          maxLength={4000}
+          value={texto}
+          onChange={(e) => setTexto(e.target.value)}
+        />
+      </label>
+      {comentar.isError && <span className="campo__erro">{mensagemDeErro(comentar.error)}</span>}
+      <div className="acoes">
+        <button type="submit" className="botao" disabled={!texto.trim() || comentar.isPending}>
+          {comentar.isPending ? 'Enviando…' : 'Comentar'}
+        </button>
+      </div>
+    </form>
+  )
+}
+
+export function Historico({
+  achadoId,
+  podeComentar = false,
+}: {
+  achadoId: string
+  podeComentar?: boolean
+}) {
   const historico = useHistorico(achadoId)
   if (historico.isPending) return <Carregando />
   if (historico.isError) return <MensagemErro erro={historico.error} />
   if (historico.data.length === 0) return <Vazio>Sem eventos.</Vazio>
   return (
-    <ol className="linha-tempo">
-      {historico.data.map((e) => (
-        <li key={e.id} className={`linha-tempo__item linha-tempo__item--${e.tipo}`}>
-          <div className="linha-tempo__cabecalho">
-            <strong>{e.autor.nome}</strong> {descrever(e)}
-          </div>
-          {e.justificativa && (
-            <blockquote className="linha-tempo__justificativa texto-pre">
-              {e.justificativa}
-            </blockquote>
-          )}
-          <time className="linha-tempo__data" dateTime={String(e.ocorridoEm)}>
-            {formatarDataHora(e.ocorridoEm)}
-          </time>
-        </li>
-      ))}
-    </ol>
+    <>
+      <ol className="linha-tempo">
+        {historico.data.map((e) => (
+          <li key={e.id} className={`linha-tempo__item linha-tempo__item--${e.tipo}`}>
+            <div className="linha-tempo__cabecalho">
+              <strong>{e.autor.nome}</strong> {descrever(e)}
+            </div>
+            {e.tipo === 'Comentario' && e.valorNovo && (
+              <p className="linha-tempo__comentario texto-pre">{e.valorNovo}</p>
+            )}
+            {e.justificativa && (
+              <blockquote className="linha-tempo__justificativa texto-pre">
+                {e.justificativa}
+              </blockquote>
+            )}
+            <time className="linha-tempo__data" dateTime={String(e.ocorridoEm)}>
+              {formatarDataHora(e.ocorridoEm)}
+            </time>
+          </li>
+        ))}
+      </ol>
+      {podeComentar && <FormularioComentario achadoId={achadoId} />}
+    </>
   )
 }

@@ -128,3 +128,8 @@ export const esquemaFiltroAchados = z.strictObject({
 })
 export type FiltroAchados = z.infer<typeof esquemaFiltroAchados>
 export type ConsultaAchados = z.input<typeof esquemaFiltroAchados>
+
+export const esquemaComentario = z.strictObject({
+  texto: textoObrigatorio(4000),
+})
+export type EntradaComentario = z.infer<typeof esquemaComentario>

@@ -43,6 +43,13 @@
       "when": 1795618088891,
       "tag": "0005_data_limite_manual",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1795618309621,
+      "tag": "0006_comentarios",
+      "breakpoints": true
     }
   ]
 }
