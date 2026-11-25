@@ -328,6 +328,7 @@ export async function alterarResponsavel(
   await db.transaction(async (tx) => {
     const atual = await carregarAchado(tx, id)
     if (atual.projeto.arquivado) throw new ConflitoError('O projeto do achado está arquivado.')
+    if (atual.achado.versao !== entrada.versao) throw new VersaoDivergenteError()
     const novo = entrada.responsavelId
       ? await buscarUsuarioParaAtribuicao(tx, entrada.responsavelId)
       : null
@@ -340,7 +341,6 @@ export async function alterarResponsavel(
       novo,
       autor,
     )
-    if (atual.achado.versao !== entrada.versao) throw new VersaoDivergenteError()
     if (eventos.length === 0) return
     await gravarEstado(
       tx,
@@ -391,6 +391,8 @@ export async function executarTransicao(
   await db.transaction(async (tx) => {
     const atual = await carregarAchado(tx, id)
     if (atual.projeto.arquivado) throw new ConflitoError('O projeto do achado está arquivado.')
+    // A versão é conferida antes das regras: o cliente decidiu sobre um estado antigo.
+    if (atual.achado.versao !== entrada.versao) throw new VersaoDivergenteError()
     const { achado: depois, eventos } = transicionar(
       {
         status: atual.achado.status,
@@ -402,7 +404,6 @@ export async function executarTransicao(
       entrada.justificativa,
       agora,
     )
-    if (atual.achado.versao !== entrada.versao) throw new VersaoDivergenteError()
     await gravarEstado(
       tx,
       id,

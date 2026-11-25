@@ -148,6 +148,15 @@ describe('responsável e transições', () => {
     expect(segunda.status).toBe(409)
   })
 
+  it('versão antiga é conflito de versão mesmo que a transição não exista mais', async () => {
+    let a = await criarAchadoApi(t, analista.cookie, projetoId, { responsavelId: dev.usuario.id })
+    a = await ok(await transicionar(analista, a, 'EmCorrecao'))
+    await ok(await transicionar(dev, a, 'AguardandoVerificacao'))
+    const res = await transicionar(analista, a, 'Aberto')
+    expect(res.status).toBe(409)
+    expect(((await res.json()) as { title: string }).title).toBe('Conflito de versão')
+  })
+
   it('transições simultâneas com a mesma versão: só uma é aplicada', async () => {
     const a = await criarAchadoApi(t, analista.cookie, projetoId)
     const respostas = await Promise.all([
