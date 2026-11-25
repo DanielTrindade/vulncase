@@ -5,7 +5,7 @@ import type {
   EntradaEditarAchado,
   EntradaTransicao,
 } from '@vulncase/compartilhado'
-import { api, ler } from './cliente'
+import { api, enviar, ler } from './cliente'
 import { chavesProjetos } from './projetos'
 
 export const chavesAchados = {
@@ -101,5 +101,52 @@ export function useTransicionar() {
     mutationFn: ({ id, dados }: { id: string; dados: EntradaTransicao }) =>
       ler(api.api.achados[':id'].transicoes.$post({ param: { id }, json: dados })),
     onSuccess: aoAlterar,
+  })
+}
+
+export const chavesEvidencias = (achadoId: string) =>
+  [...chavesAchados.todos, 'evidencias', achadoId] as const
+
+export function useEvidencias(achadoId: string) {
+  return useQuery({
+    queryKey: chavesEvidencias(achadoId),
+    queryFn: async () =>
+      (await ler(api.api.achados[':id'].evidencias.$get({ param: { id: achadoId } }))).itens,
+  })
+}
+
+export type Evidencia = NonNullable<ReturnType<typeof useEvidencias>['data']>[number]
+
+/** Envio multipart; a rota valida o corpo manualmente, então usa fetch diretamente. */
+export function useEnviarEvidencia(achadoId: string) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async ({ arquivo, descricao }: { arquivo: File; descricao: string }) => {
+      const form = new FormData()
+      form.append('arquivo', arquivo)
+      if (descricao.trim()) form.append('descricao', descricao.trim())
+      return ler(
+        fetch(`/api/achados/${encodeURIComponent(achadoId)}/evidencias`, {
+          method: 'POST',
+          body: form,
+          credentials: 'same-origin',
+        }) as Promise<{ ok: boolean; status: number; json(): Promise<Evidencia> }>,
+      )
+    },
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: chavesEvidencias(achadoId) })
+      void qc.invalidateQueries({ queryKey: chavesAchados.historico(achadoId) })
+    },
+  })
+}
+
+export function useRemoverEvidencia(achadoId: string) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (id: string) => enviar(api.api.evidencias[':id'].$delete({ param: { id } })),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: chavesEvidencias(achadoId) })
+      void qc.invalidateQueries({ queryKey: chavesAchados.historico(achadoId) })
+    },
   })
 }

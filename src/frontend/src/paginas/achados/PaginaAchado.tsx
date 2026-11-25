@@ -6,6 +6,7 @@ import { formatarData, formatarDataHora } from '../../componentes/datas'
 import { Carregando, MensagemErro } from '../../componentes/estado'
 import { SeloSeveridade, SeloStatus } from '../../componentes/selos'
 import { DialogoTransicao } from './DialogoTransicao'
+import { Evidencias } from './Evidencias'
 import { Historico } from './Historico'
 import { Responsavel } from './Responsavel'
 
@@ -93,6 +94,7 @@ export function PaginaAchado() {
             <Texto titulo="Passos de reprodução">{a.passosReproducao}</Texto>
             <Texto titulo="Correção proposta">{a.correcaoProposta}</Texto>
           </div>
+          <Evidencias achado={a} />
           <div className="cartao">
             <h2>Histórico</h2>
             <Historico achadoId={a.id} />

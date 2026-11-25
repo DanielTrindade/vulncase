@@ -862,3 +862,53 @@ textarea:focus,
 .grade > .cartao + .cartao {
   margin-top: 0;
 }
+
+/* ---------- evidências ---------- */
+.evidencias {
+  list-style: none;
+  margin: 0 0 1rem;
+  padding: 0;
+  display: grid;
+  gap: 0.75rem;
+}
+.evidencia {
+  display: flex;
+  gap: 0.9rem;
+  align-items: flex-start;
+  padding: 0.75rem;
+  border: 1px solid var(--borda);
+  border-radius: var(--raio);
+}
+.evidencia__miniatura img {
+  display: block;
+  width: 96px;
+  height: 72px;
+  object-fit: cover;
+  border-radius: 4px;
+  border: 1px solid var(--borda);
+}
+.evidencia__dados {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+.evidencia__nome {
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+.evidencia__meta {
+  font-size: 0.85rem;
+}
+.evidencia__hash {
+  font-size: 0.75rem;
+  color: var(--texto-suave);
+  overflow-wrap: anywhere;
+}
+.envio-evidencia {
+  display: grid;
+  gap: 0.75rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--borda);
+}
