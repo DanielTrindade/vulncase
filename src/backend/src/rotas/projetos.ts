@@ -1,9 +1,15 @@
 import { Hono } from 'hono'
-import { esquemaFiltroProjetos, esquemaProjeto, paramId } from '@vulncase/compartilhado'
+import {
+  esquemaCriarAchado,
+  esquemaFiltroProjetos,
+  esquemaProjeto,
+  paramId,
+} from '@vulncase/compartilhado'
 import type { Ambiente } from '../ambiente.js'
 import { analistaOuAdministrador } from '../middlewares/autorizacao.js'
 import { usuarioAtual } from '../middlewares/sessao.js'
 import { validar } from '../middlewares/validacao.js'
+import { registrarAchado } from '../servicos/achados.js'
 import {
   arquivarProjeto,
   criarProjeto,
@@ -57,4 +63,21 @@ export const rotasProjetos = new Hono<Ambiente>()
       ),
       200,
     ),
+  )
+  .post(
+    '/:id/achados',
+    analistaOuAdministrador(),
+    validar('param', paramId),
+    validar('json', esquemaCriarAchado),
+    async (c) => {
+      const achado = await registrarAchado(
+        c.get('deps').db,
+        c.get('log'),
+        usuarioAtual(c),
+        c.req.valid('param').id,
+        c.req.valid('json'),
+      )
+      c.header('Location', `/api/achados/${achado.id}`)
+      return c.json(achado, 201)
+    },
   )
