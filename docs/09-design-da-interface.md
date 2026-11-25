@@ -88,7 +88,7 @@ Três dependências exigiram ajuste para respeitar a CSP: o Sonner e o Radix Sel
 
 ## 6. Antes e depois
 
-As capturas da Tabela 3 foram feitas com os mesmos dados de demonstração, em 1440 px de largura.
+As capturas da Tabela 3 partem da carga de demonstração, em 1440 px de largura. As de antes foram feitas com a conta de administrador e incluem um achado criado em teste (`WEB-0005`); as de depois, com a conta de analista.
 
 **Tabela 3 — Interface antes e depois do redesenho**
 
