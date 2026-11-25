@@ -1,16 +1,8 @@
 import { describe, expect, it } from 'vitest'
-import { criarApp } from '../../src/app.js'
-import { carregarConfig } from '../../src/config.js'
-import type { BancoDados } from '../../src/db/cliente.js'
-import { criarLogMemoria } from '../apoio/log-memoria.js'
+import { criarAppSemBanco } from '../apoio/app-sem-banco.js'
 
 function montar() {
-  const { log, linhas } = criarLogMemoria()
-  const config = carregarConfig({
-    DATABASE_URL: 'postgres://u:p@localhost:5432/db',
-    ORIGEM_PERMITIDA: 'https://localhost',
-  })
-  const app = criarApp({ db: {} as BancoDados, config, log })
+  const { app, linhas } = criarAppSemBanco()
   app.get('/api/explodir', () => {
     throw new Error('SELECT * FROM segredo -- /srv/app/arquivo.ts:42')
   })
