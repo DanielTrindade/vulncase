@@ -39,6 +39,7 @@ interface ValoresFormulario {
   cweId: number | null
   cveId: string
   notaCvss: number | null
+  dataLimite: string
   responsavelId?: string | null
   versao?: number
 }
@@ -57,6 +58,7 @@ const CAMPOS = [
   'cveId',
   'notaCvss',
   'responsavelId',
+  'dataLimite',
 ] as const
 
 const numeroOuNulo = (v: unknown) => (v === '' || v === null || v === undefined ? null : Number(v))
@@ -79,6 +81,7 @@ function valoresIniciais(achado?: Achado): ValoresFormulario {
     cweId: achado?.cweId ?? null,
     cveId: achado?.cveId ?? '',
     notaCvss: achado?.notaCvss ?? null,
+    dataLimite: achado?.dataLimite ?? '',
   }
   return achado ? { ...comuns, versao: achado.versao } : { ...comuns, responsavelId: null }
 }
@@ -252,6 +255,18 @@ export function FormularioAchado({ achado, projetoId, aoRecarregar }: Props) {
           />
         </Campo>
       </div>
+
+      <Campo
+        rotulo="Data-limite de correção"
+        erro={errors.dataLimite?.message}
+        ajuda={
+          edicao
+            ? 'Alterar a data a fixa manualmente; deixe em branco para o achado ficar sem prazo.'
+            : 'Em branco, é calculada pela severidade: Crítica 7 dias, Alta 30, Média 90, Baixa 180, Informativa sem prazo.'
+        }
+      >
+        <input type="date" {...register('dataLimite')} />
+      </Campo>
 
       {!edicao && (
         <Campo

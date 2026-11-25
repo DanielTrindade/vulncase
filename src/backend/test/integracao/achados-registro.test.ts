@@ -229,6 +229,7 @@ describe('registro, edição e detalhe de achado', () => {
       expect(edicoes.map((e) => e.campo).sort()).toEqual([
         'categoriaOwasp',
         'cweId',
+        'dataLimite',
         'impacto',
         'severidade',
       ])

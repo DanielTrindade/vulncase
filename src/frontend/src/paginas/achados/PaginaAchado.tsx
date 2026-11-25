@@ -135,7 +135,11 @@ export function PaginaAchado() {
               </Item>
               {a.cveId && <Item rotulo="CVE">{a.cveId}</Item>}
               {a.notaCvss !== null && <Item rotulo="Nota CVSS">{a.notaCvss.toFixed(1)}</Item>}
-              <Item rotulo="Data-limite">{formatarData(a.dataLimite)}</Item>
+              <Item rotulo="Data-limite">
+                {formatarData(a.dataLimite)}
+                {a.vencido && <span className="selo selo--vencido"> Vencido</span>}
+                {a.dataLimiteManual && <span className="texto-suave"> (ajustada manualmente)</span>}
+              </Item>
               <Item rotulo="Registrado por">{a.registradoPor.nome}</Item>
               <Item rotulo="Registrado em">{formatarDataHora(a.criadoEm)}</Item>
               <Item rotulo="Atualizado em">{formatarDataHora(a.atualizadoEm)}</Item>

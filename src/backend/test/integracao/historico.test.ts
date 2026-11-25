@@ -85,6 +85,13 @@ describe('histórico do achado', () => {
     expect(itens.map((e) => [e.tipo, e.campo, e.valorAnterior, e.valorNovo, e.autor.id])).toEqual([
       ['Criacao', null, null, a.codigo, analista.usuario.id],
       ['EdicaoCampo', 'severidade', 'Alta', 'Critica', analista.usuario.id],
+      [
+        'EdicaoCampo',
+        'dataLimite',
+        itens[2]!.valorAnterior,
+        itens[2]!.valorNovo,
+        analista.usuario.id,
+      ],
       ['TrocaResponsavel', 'responsavel', null, dev.usuario.nome, analista.usuario.id],
       ['Transicao', 'status', 'Aberto', 'EmCorrecao', analista.usuario.id],
       ['Transicao', 'status', 'EmCorrecao', 'AguardandoVerificacao', dev.usuario.id],
@@ -92,7 +99,7 @@ describe('histórico do achado', () => {
       ['Transicao', 'status', 'EmCorrecao', 'AguardandoVerificacao', dev.usuario.id],
       ['Transicao', 'status', 'AguardandoVerificacao', 'Corrigido', analista.usuario.id],
     ])
-    expect(itens[5]!.justificativa).toBe('O parâmetro ainda é concatenado na consulta.')
+    expect(itens[6]!.justificativa).toBe('O parâmetro ainda é concatenado na consulta.')
     expect(itens.every((e) => e.autor.nome && !Number.isNaN(Date.parse(e.ocorridoEm)))).toBe(true)
     const datas = itens.map((e) => Date.parse(e.ocorridoEm))
     expect([...datas].sort((x, y) => x - y)).toEqual(datas)

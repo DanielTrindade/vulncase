@@ -24,6 +24,7 @@ import {
   ValidacaoError,
   VersaoDivergenteError,
 } from '../dominio/erros.js'
+import { calcularDataLimite, novaDataLimite, type PrazosSeveridade } from '../dominio/prazo.js'
 import { gerarCodigoAchado, NUMERO_MAXIMO_ACHADO } from '../dominio/projeto.js'
 import type { Log } from '../infra/log.js'
 
@@ -94,6 +95,7 @@ export function formatarAchado(c: AchadoCarregado, usuario: UsuarioSessao, hoje 
     cveId: a.cveId,
     notaCvss: a.notaCvss === null ? null : Number(a.notaCvss),
     dataLimite: a.dataLimite,
+    dataLimiteManual: a.dataLimiteManual,
     vencido: estaVencido(a, hoje),
     projeto: c.projeto,
     responsavel: c.responsavel,
@@ -153,7 +155,7 @@ async function descreverCategoria(db: Executor, id: number | null): Promise<stri
   return `${c.codigo}:${c.versao} ${c.nome}`
 }
 
-function valoresParaBanco(e: Omit<EntradaCriarAchado, 'responsavelId'>) {
+function valoresParaBanco(e: Omit<EntradaCriarAchado, 'responsavelId' | 'dataLimite'>) {
   return {
     titulo: e.titulo,
     descricao: e.descricao,
@@ -180,6 +182,7 @@ export async function registrarAchado(
   autor: UsuarioSessao,
   projetoId: string,
   entrada: EntradaCriarAchado,
+  prazos?: PrazosSeveridade,
 ): Promise<AchadoDto> {
   const agora = new Date()
   const id = await db.transaction(async (tx) => {
@@ -204,6 +207,10 @@ export async function registrarAchado(
       .insert(achados)
       .values({
         ...valoresParaBanco(entrada),
+        // RF24/RN10: informada pelo analista ou calculada pela severidade.
+        dataLimite:
+          entrada.dataLimite ?? calcularDataLimite(entrada.severidade, hojeUtc(agora), prazos),
+        dataLimiteManual: entrada.dataLimite !== undefined,
         projetoId,
         codigo,
         status: 'Aberto',
@@ -248,6 +255,7 @@ export async function editarAchado(
   autor: UsuarioSessao,
   id: string,
   entrada: EntradaEditarAchado,
+  prazos?: PrazosSeveridade,
 ): Promise<AchadoDto> {
   const agora = new Date()
   await db.transaction(async (tx) => {
@@ -256,9 +264,20 @@ export async function editarAchado(
     verificarEdicao(atual.achado, autor)
     if (atual.achado.versao !== entrada.versao) throw new VersaoDivergenteError()
 
-    const { versao: _versao, ...campos } = entrada
-    const novos = valoresParaBanco(campos)
+    const { versao: _versao, dataLimite: dataInformada, ...campos } = entrada
     const a = atual.achado
+    const prazo = novaDataLimite(
+      {
+        severidade: a.severidade,
+        dataLimite: a.dataLimite,
+        dataLimiteManual: a.dataLimiteManual,
+        dataRegistro: hojeUtc(a.criadoEm),
+      },
+      campos.severidade,
+      dataInformada,
+      prazos,
+    )
+    const novos = { ...valoresParaBanco(campos), ...prazo }
     const antes = {
       titulo: a.titulo,
       descricao: a.descricao,
@@ -272,8 +291,9 @@ export async function editarAchado(
       cweId: a.cweId,
       cveId: a.cveId,
       notaCvss: a.notaCvss,
+      dataLimite: a.dataLimite,
     }
-    const { categoriaOwaspId, ...resto } = novos
+    const { categoriaOwaspId, dataLimiteManual: _manual, ...resto } = novos
     const depois = { ...resto, categoriaOwasp: await descreverCategoria(tx, categoriaOwaspId) }
     const eventos = diferencasDeCampos(antes, depois)
     if (eventos.length === 0) return

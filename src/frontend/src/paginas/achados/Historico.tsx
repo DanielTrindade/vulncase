@@ -7,7 +7,7 @@ import {
   type OrigemAchado,
 } from '@vulncase/compartilhado'
 import { useHistorico, type EventoHistorico } from '../../api/achados'
-import { formatarDataHora } from '../../componentes/datas'
+import { formatarData, formatarDataHora } from '../../componentes/datas'
 import { Carregando, MensagemErro, Vazio } from '../../componentes/estado'
 
 const ROTULOS_CAMPO: Record<string, string> = {
@@ -23,6 +23,7 @@ const ROTULOS_CAMPO: Record<string, string> = {
   cweId: 'CWE',
   cveId: 'CVE',
   notaCvss: 'nota CVSS',
+  dataLimite: 'data-limite',
 }
 
 /** Campos de texto longo: o histórico mostra apenas que mudaram, não o conteúdo. */
@@ -33,6 +34,7 @@ function rotuloValor(campo: string | null, valor: string | null): string {
   if (campo === 'status') return ROTULOS_STATUS[valor as StatusAchado] ?? valor
   if (campo === 'severidade') return ROTULOS_SEVERIDADE[valor as Severidade] ?? valor
   if (campo === 'origem') return ROTULOS_ORIGEM[valor as OrigemAchado] ?? valor
+  if (campo === 'dataLimite') return formatarData(valor)
   return valor
 }
 

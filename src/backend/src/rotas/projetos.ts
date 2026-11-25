@@ -98,6 +98,7 @@ export const rotasProjetos = new Hono<Ambiente>()
         usuarioAtual(c),
         c.req.valid('param').id,
         c.req.valid('json'),
+        c.get('deps').config.prazos,
       )
       c.header('Location', `/api/achados/${achado.id}`)
       return c.json(achado, 201)

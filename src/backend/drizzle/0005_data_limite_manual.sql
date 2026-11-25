@@ -1,0 +1,1 @@
+ALTER TABLE "achados" ADD COLUMN "data_limite_manual" boolean DEFAULT false NOT NULL;

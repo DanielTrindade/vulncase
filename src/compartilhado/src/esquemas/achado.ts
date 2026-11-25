@@ -48,9 +48,16 @@ const camposAchado = {
  * Registro de achado. Só aceita campos editáveis: status, código, autor e datas são
  * definidos pelo servidor (A16).
  */
+const dataIso = z.iso.date('Data inválida.')
+
 export const esquemaCriarAchado = z.strictObject({
   ...camposAchado,
   responsavelId: uuid.nullish().transform((v) => v ?? null),
+  /** RF24: vazio = calculada pela severidade (RN10); informada = ajuste manual. */
+  dataLimite: dataIso
+    .nullish()
+    .or(z.literal(''))
+    .transform((v) => v || undefined),
 })
 export type EntradaCriarAchado = z.infer<typeof esquemaCriarAchado>
 export type FormularioCriarAchado = z.input<typeof esquemaCriarAchado>
@@ -58,6 +65,11 @@ export type FormularioCriarAchado = z.input<typeof esquemaCriarAchado>
 /** Edição: mesmos campos descritivos e a versão lida, para concorrência otimista (DT08). */
 export const esquemaEditarAchado = z.strictObject({
   ...camposAchado,
+  /** Omitida = mantém (ou recalcula se a severidade mudar); vazia = sem prazo. */
+  dataLimite: dataIso
+    .nullable()
+    .or(z.literal('').transform(() => null))
+    .optional(),
   versao: z.number().int().min(1),
 })
 export type EntradaEditarAchado = z.infer<typeof esquemaEditarAchado>

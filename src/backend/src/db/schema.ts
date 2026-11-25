@@ -125,6 +125,8 @@ export const achados = pgTable(
       .notNull()
       .references(() => usuarios.id),
     dataLimite: date('data_limite', { mode: 'string' }),
+    /** RF24: a data-limite foi ajustada pelo analista e não é recalculada. */
+    dataLimiteManual: boolean('data_limite_manual').notNull().default(false),
     criadoEm: instante('criado_em').notNull().defaultNow(),
     atualizadoEm: instante('atualizado_em').notNull().defaultNow(),
     encerradoEm: instante('encerrado_em'),

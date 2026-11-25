@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import type { PrazosSeveridade } from './dominio/prazo.js'
 
 const esquemaConfig = z.object({
   DATABASE_URL: z.url({ protocol: /^postgres(ql)?$/ }),
@@ -9,6 +10,11 @@ const esquemaConfig = z.object({
   ADMIN_SENHA_INICIAL: z.string().min(10).optional(),
   NODE_ENV: z.enum(['development', 'production', 'test']).default('production'),
   PORT: z.coerce.number().int().min(1).max(65535).default(3000),
+  // RN10: prazos de correção em dias por severidade (Informativa não tem prazo).
+  PRAZO_DIAS_CRITICA: z.coerce.number().int().min(1).max(3650).default(7),
+  PRAZO_DIAS_ALTA: z.coerce.number().int().min(1).max(3650).default(30),
+  PRAZO_DIAS_MEDIA: z.coerce.number().int().min(1).max(3650).default(90),
+  PRAZO_DIAS_BAIXA: z.coerce.number().int().min(1).max(3650).default(180),
   LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent']).default('info'),
 })
 
@@ -22,6 +28,7 @@ export interface Config {
   ambiente: 'development' | 'production' | 'test'
   porta: number
   nivelLog: string
+  prazos: PrazosSeveridade
 }
 
 export class ConfiguracaoInvalidaError extends Error {
@@ -57,5 +64,12 @@ export function carregarConfig(env: NodeJS.ProcessEnv = process.env): Config {
     ambiente: c.NODE_ENV,
     porta: c.PORT,
     nivelLog: c.LOG_LEVEL,
+    prazos: {
+      Critica: c.PRAZO_DIAS_CRITICA,
+      Alta: c.PRAZO_DIAS_ALTA,
+      Media: c.PRAZO_DIAS_MEDIA,
+      Baixa: c.PRAZO_DIAS_BAIXA,
+      Informativa: null,
+    },
   }
 }

@@ -236,4 +236,5 @@ Variáveis de ambiente lidas pela API e validadas com Zod na inicialização; a 
 | `EVIDENCIAS_DIRETORIO` | Caminho do volume de evidências. |
 | `EVIDENCIAS_TAMANHO_MAXIMO_BYTES` | Padrão `5242880`. |
 | `ADMIN_EMAIL_INICIAL`, `ADMIN_SENHA_INICIAL` | Criação do primeiro administrador quando o banco está vazio. |
+| `PRAZO_DIAS_CRITICA`, `PRAZO_DIAS_ALTA`, `PRAZO_DIAS_MEDIA`, `PRAZO_DIAS_BAIXA` | Prazos de correção da RN10, em dias. Padrões 7, 30, 90 e 180. |
 | `NODE_ENV` | `development` habilita a carga de demonstração e mensagens de erro detalhadas no *log*. |
