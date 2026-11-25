@@ -15,6 +15,20 @@
       "when": 1795614044258,
       "tag": "0001_categorias_owasp_2021",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1795615759556,
+      "tag": "0002_historico_sequencia",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1795615760417,
+      "tag": "0003_historico_somente_insercao",
+      "breakpoints": true
     }
   ]
 }

@@ -1,5 +1,6 @@
 import { sql } from 'drizzle-orm'
 import {
+  bigint,
   boolean,
   char,
   check,
@@ -175,9 +176,11 @@ export const eventosHistorico = pgTable(
     valorNovo: text('valor_novo'),
     justificativa: text('justificativa'),
     ocorridoEm: instante('ocorrido_em').notNull().defaultNow(),
+    /** Ordem de inserção: desempata eventos gravados no mesmo instante. */
+    sequencia: bigint('sequencia', { mode: 'number' }).generatedAlwaysAsIdentity(),
   },
   (t) => [
-    index('eventos_historico_achado_ocorrido_idx').on(t.achadoId, t.ocorridoEm),
+    index('eventos_historico_achado_ocorrido_idx').on(t.achadoId, t.ocorridoEm, t.sequencia),
     check(
       'eventos_historico_tipo_ck',
       sql`${t.tipo} IN ('Criacao', 'EdicaoCampo', 'TrocaResponsavel', 'Transicao', 'EvidenciaAdicionada', 'EvidenciaRemovida', 'Comentario')`,

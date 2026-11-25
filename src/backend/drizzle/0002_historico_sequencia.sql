@@ -1,0 +1,3 @@
+DROP INDEX "eventos_historico_achado_ocorrido_idx";--> statement-breakpoint
+ALTER TABLE "eventos_historico" ADD COLUMN "sequencia" bigint NOT NULL GENERATED ALWAYS AS IDENTITY (sequence name "eventos_historico_sequencia_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 9223372036854775807 START WITH 1 CACHE 1);--> statement-breakpoint
+CREATE INDEX "eventos_historico_achado_ocorrido_idx" ON "eventos_historico" USING btree ("achado_id","ocorrido_em","sequencia");

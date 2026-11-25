@@ -15,10 +15,14 @@ import {
   editarAchado,
   executarTransicao,
 } from '../servicos/achados.js'
+import { listarHistorico } from '../servicos/historico.js'
 
 export const rotasAchados = new Hono<Ambiente>()
   .get('/:id', validar('param', paramId), async (c) =>
     c.json(await detalharAchado(c.get('deps').db, c.req.valid('param').id, usuarioAtual(c)), 200),
+  )
+  .get('/:id/historico', validar('param', paramId), async (c) =>
+    c.json({ itens: await listarHistorico(c.get('deps').db, c.req.valid('param').id) }, 200),
   )
   .put(
     '/:id',

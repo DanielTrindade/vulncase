@@ -1,0 +1,867 @@
+{
+  "id": "78510768-0591-44d0-9325-6a1b992aa5a8",
+  "prevId": "171e8095-cfcd-48b9-ba53-da6b4790aec2",
+  "version": "7",
+  "dialect": "postgresql",
+  "tables": {
+    "public.achados": {
+      "name": "achados",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "projeto_id": {
+          "name": "projeto_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "codigo": {
+          "name": "codigo",
+          "type": "varchar(10)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "titulo": {
+          "name": "titulo",
+          "type": "varchar(160)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "descricao": {
+          "name": "descricao",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "origem": {
+          "name": "origem",
+          "type": "varchar(30)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "severidade": {
+          "name": "severidade",
+          "type": "varchar(15)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "varchar(25)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'Aberto'"
+        },
+        "localizacao": {
+          "name": "localizacao",
+          "type": "varchar(500)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "impacto": {
+          "name": "impacto",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "passos_reproducao": {
+          "name": "passos_reproducao",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "correcao_proposta": {
+          "name": "correcao_proposta",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "categoria_owasp_id": {
+          "name": "categoria_owasp_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "cwe_id": {
+          "name": "cwe_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "cve_id": {
+          "name": "cve_id",
+          "type": "varchar(20)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "nota_cvss": {
+          "name": "nota_cvss",
+          "type": "numeric(3, 1)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "responsavel_id": {
+          "name": "responsavel_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "registrado_por_id": {
+          "name": "registrado_por_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "data_limite": {
+          "name": "data_limite",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "criado_em": {
+          "name": "criado_em",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "atualizado_em": {
+          "name": "atualizado_em",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "encerrado_em": {
+          "name": "encerrado_em",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "versao": {
+          "name": "versao",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 1
+        }
+      },
+      "indexes": {
+        "achados_codigo_uq": {
+          "name": "achados_codigo_uq",
+          "columns": [
+            {
+              "expression": "codigo",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "achados_projeto_status_severidade_idx": {
+          "name": "achados_projeto_status_severidade_idx",
+          "columns": [
+            {
+              "expression": "projeto_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "status",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "severidade",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "achados_responsavel_status_idx": {
+          "name": "achados_responsavel_status_idx",
+          "columns": [
+            {
+              "expression": "responsavel_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "status",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "achados_data_limite_abertos_idx": {
+          "name": "achados_data_limite_abertos_idx",
+          "columns": [
+            {
+              "expression": "data_limite",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "where": "\"achados\".\"encerrado_em\" IS NULL",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "achados_projeto_id_projetos_id_fk": {
+          "name": "achados_projeto_id_projetos_id_fk",
+          "tableFrom": "achados",
+          "tableTo": "projetos",
+          "columnsFrom": [
+            "projeto_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "achados_categoria_owasp_id_categorias_owasp_id_fk": {
+          "name": "achados_categoria_owasp_id_categorias_owasp_id_fk",
+          "tableFrom": "achados",
+          "tableTo": "categorias_owasp",
+          "columnsFrom": [
+            "categoria_owasp_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "achados_responsavel_id_usuarios_id_fk": {
+          "name": "achados_responsavel_id_usuarios_id_fk",
+          "tableFrom": "achados",
+          "tableTo": "usuarios",
+          "columnsFrom": [
+            "responsavel_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "achados_registrado_por_id_usuarios_id_fk": {
+          "name": "achados_registrado_por_id_usuarios_id_fk",
+          "tableFrom": "achados",
+          "tableTo": "usuarios",
+          "columnsFrom": [
+            "registrado_por_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "achados_cwe_ck": {
+          "name": "achados_cwe_ck",
+          "value": "\"achados\".\"cwe_id\" > 0"
+        },
+        "achados_cve_ck": {
+          "name": "achados_cve_ck",
+          "value": "\"achados\".\"cve_id\" ~ '^CVE-[0-9]{4}-[0-9]{4,}$'"
+        },
+        "achados_cvss_ck": {
+          "name": "achados_cvss_ck",
+          "value": "\"achados\".\"nota_cvss\" BETWEEN 0 AND 10"
+        },
+        "achados_descricao_ck": {
+          "name": "achados_descricao_ck",
+          "value": "char_length(\"achados\".\"descricao\") <= 10000"
+        },
+        "achados_impacto_ck": {
+          "name": "achados_impacto_ck",
+          "value": "char_length(\"achados\".\"impacto\") <= 4000"
+        },
+        "achados_passos_ck": {
+          "name": "achados_passos_ck",
+          "value": "char_length(\"achados\".\"passos_reproducao\") <= 10000"
+        },
+        "achados_correcao_ck": {
+          "name": "achados_correcao_ck",
+          "value": "char_length(\"achados\".\"correcao_proposta\") <= 10000"
+        },
+        "achados_origem_ck": {
+          "name": "achados_origem_ck",
+          "value": "\"achados\".\"origem\" IN ('AnaliseRede', 'TesteAplicacaoWeb', 'TesteAplicacaoMovel', 'RevisaoCodigo', 'AnaliseConfiguracao', 'Outra')"
+        },
+        "achados_severidade_ck": {
+          "name": "achados_severidade_ck",
+          "value": "\"achados\".\"severidade\" IN ('Critica', 'Alta', 'Media', 'Baixa', 'Informativa')"
+        },
+        "achados_status_ck": {
+          "name": "achados_status_ck",
+          "value": "\"achados\".\"status\" IN ('Aberto', 'EmCorrecao', 'AguardandoVerificacao', 'Corrigido', 'FalsoPositivo', 'RiscoAceito')"
+        },
+        "achados_versao_ck": {
+          "name": "achados_versao_ck",
+          "value": "\"achados\".\"versao\" >= 1"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.categorias_owasp": {
+      "name": "categorias_owasp",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "versao": {
+          "name": "versao",
+          "type": "varchar(10)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "codigo": {
+          "name": "codigo",
+          "type": "varchar(10)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "nome": {
+          "name": "nome",
+          "type": "varchar(120)",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {
+        "categorias_owasp_versao_codigo_uq": {
+          "name": "categorias_owasp_versao_codigo_uq",
+          "columns": [
+            {
+              "expression": "versao",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "codigo",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.eventos_historico": {
+      "name": "eventos_historico",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "achado_id": {
+          "name": "achado_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "autor_id": {
+          "name": "autor_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "tipo": {
+          "name": "tipo",
+          "type": "varchar(30)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "campo": {
+          "name": "campo",
+          "type": "varchar(50)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "valor_anterior": {
+          "name": "valor_anterior",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "valor_novo": {
+          "name": "valor_novo",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "justificativa": {
+          "name": "justificativa",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "ocorrido_em": {
+          "name": "ocorrido_em",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "sequencia": {
+          "name": "sequencia",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true,
+          "identity": {
+            "type": "always",
+            "name": "eventos_historico_sequencia_seq",
+            "schema": "public",
+            "increment": "1",
+            "startWith": "1",
+            "minValue": "1",
+            "maxValue": "9223372036854775807",
+            "cache": "1",
+            "cycle": false
+          }
+        }
+      },
+      "indexes": {
+        "eventos_historico_achado_ocorrido_idx": {
+          "name": "eventos_historico_achado_ocorrido_idx",
+          "columns": [
+            {
+              "expression": "achado_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "ocorrido_em",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "sequencia",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "eventos_historico_achado_id_achados_id_fk": {
+          "name": "eventos_historico_achado_id_achados_id_fk",
+          "tableFrom": "eventos_historico",
+          "tableTo": "achados",
+          "columnsFrom": [
+            "achado_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "eventos_historico_autor_id_usuarios_id_fk": {
+          "name": "eventos_historico_autor_id_usuarios_id_fk",
+          "tableFrom": "eventos_historico",
+          "tableTo": "usuarios",
+          "columnsFrom": [
+            "autor_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "eventos_historico_tipo_ck": {
+          "name": "eventos_historico_tipo_ck",
+          "value": "\"eventos_historico\".\"tipo\" IN ('Criacao', 'EdicaoCampo', 'TrocaResponsavel', 'Transicao', 'EvidenciaAdicionada', 'EvidenciaRemovida', 'Comentario')"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.projetos": {
+      "name": "projetos",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "prefixo": {
+          "name": "prefixo",
+          "type": "varchar(5)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "nome": {
+          "name": "nome",
+          "type": "varchar(120)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "descricao": {
+          "name": "descricao",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "responsavel_tecnico_id": {
+          "name": "responsavel_tecnico_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "arquivado": {
+          "name": "arquivado",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "proximo_numero_achado": {
+          "name": "proximo_numero_achado",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 1
+        },
+        "criado_em": {
+          "name": "criado_em",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "atualizado_em": {
+          "name": "atualizado_em",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "projetos_prefixo_uq": {
+          "name": "projetos_prefixo_uq",
+          "columns": [
+            {
+              "expression": "prefixo",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "projetos_responsavel_tecnico_id_usuarios_id_fk": {
+          "name": "projetos_responsavel_tecnico_id_usuarios_id_fk",
+          "tableFrom": "projetos",
+          "tableTo": "usuarios",
+          "columnsFrom": [
+            "responsavel_tecnico_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "projetos_prefixo_ck": {
+          "name": "projetos_prefixo_ck",
+          "value": "\"projetos\".\"prefixo\" ~ '^[A-Z]{2,5}$'"
+        },
+        "projetos_descricao_ck": {
+          "name": "projetos_descricao_ck",
+          "value": "char_length(\"projetos\".\"descricao\") <= 4000"
+        },
+        "projetos_proximo_numero_ck": {
+          "name": "projetos_proximo_numero_ck",
+          "value": "\"projetos\".\"proximo_numero_achado\" >= 1"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.sessoes": {
+      "name": "sessoes",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "usuario_id": {
+          "name": "usuario_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "token_hash": {
+          "name": "token_hash",
+          "type": "char(64)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "criada_em": {
+          "name": "criada_em",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "expira_em": {
+          "name": "expira_em",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "ip": {
+          "name": "ip",
+          "type": "varchar(64)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "user_agent": {
+          "name": "user_agent",
+          "type": "varchar(512)",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "sessoes_token_hash_uq": {
+          "name": "sessoes_token_hash_uq",
+          "columns": [
+            {
+              "expression": "token_hash",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "sessoes_usuario_idx": {
+          "name": "sessoes_usuario_idx",
+          "columns": [
+            {
+              "expression": "usuario_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "sessoes_usuario_id_usuarios_id_fk": {
+          "name": "sessoes_usuario_id_usuarios_id_fk",
+          "tableFrom": "sessoes",
+          "tableTo": "usuarios",
+          "columnsFrom": [
+            "usuario_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.usuarios": {
+      "name": "usuarios",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "nome": {
+          "name": "nome",
+          "type": "varchar(120)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "email": {
+          "name": "email",
+          "type": "varchar(254)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "password_hash": {
+          "name": "password_hash",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "papel": {
+          "name": "papel",
+          "type": "varchar(20)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "ativo": {
+          "name": "ativo",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": true
+        },
+        "tentativas_falhas": {
+          "name": "tentativas_falhas",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "bloqueado_ate": {
+          "name": "bloqueado_ate",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "criado_em": {
+          "name": "criado_em",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "usuarios_email_normalizado_uq": {
+          "name": "usuarios_email_normalizado_uq",
+          "columns": [
+            {
+              "expression": "lower(\"email\")",
+              "asc": true,
+              "isExpression": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "usuarios_papel_ck": {
+          "name": "usuarios_papel_ck",
+          "value": "\"usuarios\".\"papel\" IN ('Administrador', 'Analista', 'Desenvolvedor')"
+        }
+      },
+      "isRLSEnabled": false
+    }
+  },
+  "enums": {},
+  "schemas": {},
+  "sequences": {},
+  "roles": {},
+  "policies": {},
+  "views": {},
+  "_meta": {
+    "columns": {},
+    "schemas": {},
+    "tables": {}
+  }
+}
