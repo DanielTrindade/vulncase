@@ -1,0 +1,5 @@
+packages:
+  - 'src/*'
+onlyBuiltDependencies:
+  - '@node-rs/argon2'
+  - esbuild
