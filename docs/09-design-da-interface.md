@@ -83,3 +83,21 @@ Curvas: `--ease-out: cubic-bezier(0.23, 1, 0.32, 1)`, `--ease-in-out: cubic-bezi
 ## 5. Restrições de segurança
 
 A interface continua sob a CSP sem `unsafe-inline`: as fontes são servidas pela própria aplicação (pacotes `@fontsource`), não há *script* externo e nenhum conteúdo cadastrado é interpretado como HTML.
+
+Três dependências exigiram ajuste para respeitar a CSP: o Sonner e o Radix Select injetam `<style>` em tempo de execução, e essas injeções são removidas no *build* por um *plugin* do Vite (`src/frontend/vite.config.ts`), com o CSS equivalente servido no pacote; o `react-style-singleton`, usado no bloqueio de rolagem dos diálogos, é substituído por um módulo vazio (`src/frontend/src/lib/sem-estilo-inline.ts`); e o Zod roda sem compilação JIT, que testaria `new Function` e esbarraria em `script-src 'self'`. Com isso, nenhuma tela registra violação de CSP no navegador.
+
+## 6. Antes e depois
+
+As capturas da Tabela 3 foram feitas com os mesmos dados de demonstração, em 1440 px de largura.
+
+**Tabela 3 — Interface antes e depois do redesenho**
+
+| Tela | Antes | Depois |
+|---|---|---|
+| Entrada | [captura](interface/antes/entrar.jpg) | [captura](interface/depois/entrar.jpg) |
+| Painel | [captura](interface/antes/painel.jpg) | [captura](interface/depois/painel.jpg) |
+| Painel, tema escuro | [captura](interface/antes/painel-escuro.jpg) | [captura](interface/depois/painel-escuro.jpg) |
+| Lista de achados | [captura](interface/antes/achados.jpg) | [captura](interface/depois/achados.jpg) |
+| Detalhe do achado | [captura](interface/antes/detalhe.jpg) | [captura](interface/depois/detalhe.jpg) |
+| Formulário do achado | [captura](interface/antes/formulario.jpg) | [captura](interface/depois/formulario.jpg) |
+| Detalhe do achado, celular (390 px) | — | [captura](interface/depois/celular-detalhe.jpg) |
