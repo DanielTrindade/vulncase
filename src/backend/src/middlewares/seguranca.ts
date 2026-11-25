@@ -11,7 +11,7 @@ export const LIMITE_CORPO_JSON = 64 * 1024
  * origens; estilos inline são aceitos apenas para bibliotecas de gráficos.
  */
 export function cabecalhosSeguranca() {
-  return secureHeaders({
+  const aplicar = secureHeaders({
     contentSecurityPolicy: {
       defaultSrc: ["'self'"],
       scriptSrc: ["'self'"],
@@ -30,6 +30,16 @@ export function cabecalhosSeguranca() {
     strictTransportSecurity: 'max-age=31536000; includeSubDomains',
     crossOriginResourcePolicy: 'same-origin',
     crossOriginOpenerPolicy: 'same-origin',
+  })
+  // Uma rota pode definir CSP mais restritiva (ex.: download com sandbox); o
+  // secureHeaders sobrescreveria o valor, então ele é restaurado depois.
+  return createMiddleware(async (c, next) => {
+    let cspDaRota: string | null = null
+    await aplicar(c, async () => {
+      await next()
+      cspDaRota = c.res.headers.get('Content-Security-Policy')
+    })
+    if (cspDaRota) c.res.headers.set('Content-Security-Policy', cspDaRota)
   })
 }
 
@@ -63,5 +73,22 @@ export function limitarCorpo(maxSize: number = LIMITE_CORPO_JSON) {
     onError: () => {
       throw new HTTPException(413)
     },
+  })
+}
+
+/** Folga para os delimitadores e campos do multipart além do próprio arquivo. */
+const FOLGA_MULTIPART = 64 * 1024
+const ROTA_ENVIO_EVIDENCIA = /^\/api\/achados\/[^/]+\/evidencias$/
+
+/**
+ * Limite de corpo por rota: 64 KB para JSON e, só no envio de evidências, o tamanho
+ * máximo configurado mais a folga do multipart (RNF14, A14).
+ */
+export function limitarCorpoPorRota(tamanhoMaximoEvidencia: number) {
+  const padrao = limitarCorpo(LIMITE_CORPO_JSON)
+  const evidencia = limitarCorpo(tamanhoMaximoEvidencia + FOLGA_MULTIPART)
+  return createMiddleware(async (c, next) => {
+    const envio = c.req.method === 'POST' && ROTA_ENVIO_EVIDENCIA.test(c.req.path)
+    return (envio ? evidencia : padrao)(c, next)
   })
 }

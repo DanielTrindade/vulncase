@@ -187,3 +187,29 @@ export const eventosHistorico = pgTable(
     ),
   ],
 )
+
+/** Evidências anexadas ao achado (RF25, RNF14). O arquivo fica no volume, fora da raiz pública. */
+export const evidencias = pgTable(
+  'evidencias',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    achadoId: uuid('achado_id')
+      .notNull()
+      .references(() => achados.id),
+    nomeOriginal: varchar('nome_original', { length: 255 }).notNull(),
+    nomeArmazenado: varchar('nome_armazenado', { length: 64 }).notNull(),
+    tipoConteudo: varchar('tipo_conteudo', { length: 100 }).notNull(),
+    tamanhoBytes: bigint('tamanho_bytes', { mode: 'number' }).notNull(),
+    hashSha256: char('hash_sha256', { length: 64 }).notNull(),
+    descricao: varchar('descricao', { length: 500 }),
+    enviadaPorId: uuid('enviada_por_id')
+      .notNull()
+      .references(() => usuarios.id),
+    enviadaEm: instante('enviada_em').notNull().defaultNow(),
+  },
+  (t) => [
+    uniqueIndex('evidencias_nome_armazenado_uq').on(t.nomeArmazenado),
+    index('evidencias_achado_idx').on(t.achadoId, t.enviadaEm),
+    check('evidencias_tamanho_ck', sql`${t.tamanhoBytes} BETWEEN 1 AND 5242880`),
+  ],
+)

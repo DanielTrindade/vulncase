@@ -1,5 +1,9 @@
+import { mkdtemp } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import path from 'node:path'
 import type { Papel } from '@vulncase/compartilhado'
 import { criarApp } from '../../src/app.js'
+import { Armazenamento } from '../../src/infra/armazenamento.js'
 import { carregarConfig } from '../../src/config.js'
 import { usuarios } from '../../src/db/schema.js'
 import { gerarHash } from '../../src/infra/senha.js'
@@ -16,8 +20,14 @@ let hashPadrao: Promise<string> | undefined
 export async function criarAmbienteTeste() {
   const banco = await criarBancoIsolado()
   const { log, linhas } = criarLogMemoria()
-  const config = carregarConfig({ DATABASE_URL: banco.url, ORIGEM_PERMITIDA: ORIGEM })
-  const app = criarApp({ db: banco.db, config, log })
+  const diretorioEvidencias = await mkdtemp(path.join(tmpdir(), 'vulncase-evidencias-'))
+  const config = carregarConfig({
+    DATABASE_URL: banco.url,
+    ORIGEM_PERMITIDA: ORIGEM,
+    EVIDENCIAS_DIRETORIO: diretorioEvidencias,
+  })
+  const armazenamento = new Armazenamento(diretorioEvidencias)
+  const app = criarApp({ db: banco.db, config, log, armazenamento })
 
   async function requisitar(
     caminho: string,
@@ -36,6 +46,28 @@ export async function criarAmbienteTeste() {
       body = JSON.stringify(opcoes.corpo)
     }
     return app.request(caminho, { method: opcoes.metodo ?? 'GET', headers: cabecalhos, body })
+  }
+
+  /** Envia multipart/form-data, como o navegador faz no envio de evidência. */
+  async function enviarArquivo(
+    caminho: string,
+    cookie: string,
+    arquivo: { nome: string; conteudo: Uint8Array; tipo?: string },
+    descricao?: string,
+  ) {
+    const form = new FormData()
+    form.append(
+      'arquivo',
+      new File([arquivo.conteudo], arquivo.nome, {
+        type: arquivo.tipo ?? 'application/octet-stream',
+      }),
+    )
+    if (descricao !== undefined) form.append('descricao', descricao)
+    return app.request(caminho, {
+      method: 'POST',
+      headers: { Origin: ORIGEM, Cookie: cookie },
+      body: form,
+    })
   }
 
   async function criarUsuario(
@@ -73,7 +105,20 @@ export async function criarAmbienteTeste() {
     return { usuario, cookie }
   }
 
-  return { app, banco, db: banco.db, log, linhas, requisitar, criarUsuario, entrar, sessaoDe }
+  return {
+    app,
+    banco,
+    db: banco.db,
+    log,
+    linhas,
+    diretorioEvidencias,
+    config,
+    requisitar,
+    enviarArquivo,
+    criarUsuario,
+    entrar,
+    sessaoDe,
+  }
 }
 
 export function extrairCookie(res: Response): string {

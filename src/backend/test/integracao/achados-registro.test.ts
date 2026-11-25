@@ -189,7 +189,12 @@ describe('registro, edição e detalhe de achado', () => {
     const comoDev = (await (
       await t.requisitar(`/api/achados/${a.id}`, { cookie: dev.cookie })
     ).json()) as AchadoResposta
-    expect(comoDev.acoes).toEqual({ editar: false, atribuirResponsavel: false, transicoes: [] })
+    expect(comoDev.acoes).toEqual({
+      editar: false,
+      atribuirResponsavel: false,
+      anexarEvidencia: true,
+      transicoes: [],
+    })
   })
 
   it('detalhe de achado inexistente retorna 404', async () => {

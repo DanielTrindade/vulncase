@@ -242,7 +242,27 @@ export function transicoesPermitidas(achado: EstadoAchado, ator: Ator): AcaoTran
 export interface AcoesPermitidas {
   editar: boolean
   atribuirResponsavel: boolean
+  anexarEvidencia: boolean
   transicoes: AcaoTransicao[]
+}
+
+/**
+ * Comentar e anexar evidência (Tabela 1 do documento 02): analistas e administradores
+ * em qualquer achado não encerrado; desenvolvedores só nos atribuídos a si.
+ */
+export function podeColaborar(achado: EstadoAchado, ator: Ator): boolean {
+  if (estaEncerrado(achado.status)) return false
+  return ehGestor(ator) || ehResponsavel(achado, ator)
+}
+
+/** Remover evidência: analistas, administradores ou quem a enviou (RF26). */
+export function podeRemoverEvidencia(
+  achado: Pick<EstadoAchado, 'status'>,
+  evidencia: { enviadaPorId: string },
+  ator: Ator,
+): boolean {
+  if (estaEncerrado(achado.status)) return false
+  return ehGestor(ator) || evidencia.enviadaPorId === ator.id
 }
 
 export function acoesPermitidas(achado: EstadoAchado, ator: Ator): AcoesPermitidas {
@@ -250,6 +270,7 @@ export function acoesPermitidas(achado: EstadoAchado, ator: Ator): AcoesPermitid
   return {
     editar: aberto && ehGestor(ator),
     atribuirResponsavel: aberto && ehGestor(ator),
+    anexarEvidencia: podeColaborar(achado, ator),
     transicoes: transicoesPermitidas(achado, ator),
   }
 }

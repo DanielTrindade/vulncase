@@ -4,6 +4,7 @@ import { carregarConfig, ConfiguracaoInvalidaError } from './config.js'
 import { criarBanco } from './db/cliente.js'
 import { aplicarMigrations } from './db/migrar.js'
 import { criarAdministradorInicial } from './db/admin-inicial.js'
+import { Armazenamento } from './infra/armazenamento.js'
 import { criarLog } from './infra/log.js'
 
 async function iniciar(): Promise<void> {
@@ -26,7 +27,8 @@ async function iniciar(): Promise<void> {
   log.info('migrations aplicadas')
   await criarAdministradorInicial(db, config, log)
 
-  const app = criarApp({ db, config, log })
+  const armazenamento = new Armazenamento(config.evidenciasDiretorio)
+  const app = criarApp({ db, config, log, armazenamento })
   const servidor = serve({ fetch: app.fetch, port: config.porta }, (info) => {
     log.info({ porta: info.port, ambiente: config.ambiente }, 'API iniciada')
   })

@@ -4,9 +4,10 @@
 }
 
 localhost {
-	# Limite de corpo de 5 MB para toda requisição (RNF14, A14).
+	# Limite de corpo no proxy (RNF14, A14): evidência de até 5 MB mais a folga do
+	# multipart. A API aplica o limite exato do arquivo e 64 KB para JSON.
 	request_body {
-		max_size 5MB
+		max_size 6MB
 	}
 
 	# Não anuncia o servidor.

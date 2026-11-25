@@ -17,6 +17,8 @@ import {
   executarTransicao,
 } from '../servicos/achados.js'
 import { listarHistorico } from '../servicos/historico.js'
+import { anexarEvidencia, listarEvidencias } from '../servicos/evidencias.js'
+import { ValidacaoError } from '../dominio/erros.js'
 import { listarAchados } from '../servicos/listagem-achados.js'
 
 export const rotasAchados = new Hono<Ambiente>()
@@ -80,3 +82,34 @@ export const rotasAchados = new Hono<Ambiente>()
         200,
       ),
   )
+  .get('/:id/evidencias', validar('param', paramId), async (c) =>
+    c.json({ itens: await listarEvidencias(c.get('deps').db, c.req.valid('param').id) }, 200),
+  )
+  // multipart/form-data com os campos "arquivo" e "descricao" (opcional).
+  .post('/:id/evidencias', validar('param', paramId), async (c) => {
+    const corpo = await c.req.parseBody()
+    const arquivo = corpo.arquivo
+    const descricaoBruta = corpo.descricao
+    if (!(arquivo instanceof File)) {
+      throw new ValidacaoError([{ campo: 'arquivo', mensagem: 'Envie um arquivo.' }])
+    }
+    if (descricaoBruta !== undefined && typeof descricaoBruta !== 'string') {
+      throw new ValidacaoError([{ campo: 'descricao', mensagem: 'Descrição inválida.' }])
+    }
+    const descricao = descricaoBruta?.trim() || null
+    if (descricao && descricao.length > 500) {
+      throw new ValidacaoError([{ campo: 'descricao', mensagem: 'Máximo de 500 caracteres.' }])
+    }
+    const { db, armazenamento, config } = c.get('deps')
+    const evidencia = await anexarEvidencia(
+      db,
+      armazenamento,
+      c.get('log'),
+      usuarioAtual(c),
+      c.req.valid('param').id,
+      { nome: arquivo.name, conteudo: new Uint8Array(await arquivo.arrayBuffer()), descricao },
+      config.evidenciasTamanhoMaximoBytes,
+    )
+    c.header('Location', `/api/evidencias/${evidencia.id}/download`)
+    return c.json(evidencia, 201)
+  })

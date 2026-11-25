@@ -2,11 +2,16 @@ import { Hono } from 'hono'
 import type { Ambiente, Dependencias } from './ambiente.js'
 import { naoEncontrado, tratarErro } from './middlewares/erros.js'
 import { registrarRequisicao } from './middlewares/requisicao.js'
-import { cabecalhosSeguranca, limitarCorpo, verificarOrigem } from './middlewares/seguranca.js'
+import {
+  cabecalhosSeguranca,
+  limitarCorpoPorRota,
+  verificarOrigem,
+} from './middlewares/seguranca.js'
 import { carregarSessao, exigirSessao } from './middlewares/sessao.js'
 import { rotasAchados } from './rotas/achados.js'
 import { rotasAuth } from './rotas/auth.js'
 import { rotasCategorias } from './rotas/categorias.js'
+import { rotasEvidencias } from './rotas/evidencias.js'
 import { rotasPainel } from './rotas/painel.js'
 import { rotasProjetos } from './rotas/projetos.js'
 import { rotasUsuarios } from './rotas/usuarios.js'
@@ -21,7 +26,7 @@ export function criarApp(deps: Dependencias) {
     .use(registrarRequisicao(deps))
     .use(cabecalhosSeguranca())
     .use('/api/*', verificarOrigem(deps.config.origemPermitida))
-    .use('/api/*', limitarCorpo())
+    .use('/api/*', limitarCorpoPorRota(deps.config.evidenciasTamanhoMaximoBytes))
     .use('/api/*', carregarSessao())
     .use('/api/*', exigirSessao())
     .get('/api/health', (c) => c.json({ status: 'ok' as const }))
@@ -31,6 +36,7 @@ export function criarApp(deps: Dependencias) {
     .route('/api/achados', rotasAchados)
     .route('/api/categorias-owasp', rotasCategorias)
     .route('/api/painel', rotasPainel)
+    .route('/api/evidencias', rotasEvidencias)
 
   app.onError(tratarErro)
   app.notFound(naoEncontrado)

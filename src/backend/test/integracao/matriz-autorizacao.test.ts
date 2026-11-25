@@ -5,6 +5,7 @@
  */
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import type { Papel } from '@vulncase/compartilhado'
+import { PNG, TXT } from '../apoio/arquivos.js'
 import { criarAmbienteTeste, SENHA_PADRAO, type AmbienteTeste } from '../apoio/app-teste.js'
 import {
   achadoValido,
@@ -21,6 +22,8 @@ interface Requisicao {
   metodo: string
   caminho: string
   corpo?: unknown
+  /** Envio multipart de arquivo, em vez de corpo JSON. */
+  arquivo?: { nome: string; conteudo: Uint8Array }
 }
 
 interface Caso {
@@ -365,18 +368,87 @@ describe('matriz de autorização por rota e papel', () => {
         }
       },
     },
+    // ---------- evidências ----------
+    {
+      rota: 'GET /api/achados/:id/evidencias',
+      esperado: todos(200),
+      montar: async () => ({
+        metodo: 'GET',
+        caminho: `/api/achados/${(await achado()).id}/evidencias`,
+      }),
+    },
+    {
+      rota: 'POST /api/achados/:id/evidencias',
+      descricao: 'no achado atribuído a si',
+      esperado: todos(201),
+      montar: async (s) => ({
+        metodo: 'POST',
+        caminho: `/api/achados/${(await achado({ responsavelId: s.usuario.id })).id}/evidencias`,
+        arquivo: { nome: 'log.txt', conteudo: TXT },
+      }),
+    },
+    {
+      rota: 'POST /api/achados/:id/evidencias',
+      descricao: 'em achado de outra pessoa',
+      esperado: gestao(201),
+      montar: async () => ({
+        metodo: 'POST',
+        caminho: `/api/achados/${(await achado({ responsavelId: outroDev.usuario.id })).id}/evidencias`,
+        arquivo: { nome: 'tela.png', conteudo: PNG },
+      }),
+    },
+    {
+      rota: 'GET /api/evidencias/:id/download',
+      esperado: todos(200),
+      montar: async () => ({
+        metodo: 'GET',
+        caminho: `/api/evidencias/${(await evidenciaDe(analista)).id}/download`,
+      }),
+    },
+    {
+      rota: 'DELETE /api/evidencias/:id',
+      descricao: 'evidência enviada pela própria pessoa',
+      esperado: todos(204),
+      montar: async (s) => ({
+        metodo: 'DELETE',
+        caminho: `/api/evidencias/${(await evidenciaDe(s)).id}`,
+      }),
+    },
+    {
+      rota: 'DELETE /api/evidencias/:id',
+      descricao: 'evidência enviada por outra pessoa',
+      esperado: gestao(204),
+      montar: async () => ({
+        metodo: 'DELETE',
+        caminho: `/api/evidencias/${(await evidenciaDe(outroDev)).id}`,
+      }),
+    },
   ]
+
+  /** Evidência enviada pela sessão informada, num achado atribuído a ela. */
+  async function evidenciaDe(s: Sessao): Promise<{ id: string }> {
+    const a = await achado({
+      responsavelId: s.usuario.papel === 'Desenvolvedor' ? s.usuario.id : null,
+    })
+    const res = await t.enviarArquivo(`/api/achados/${a.id}/evidencias`, s.cookie, {
+      nome: 'log.txt',
+      conteudo: TXT,
+    })
+    return (await res.json()) as { id: string }
+  }
 
   for (const caso of casos) {
     describe(`${caso.rota}${caso.descricao ? ` — ${caso.descricao}` : ''}`, () => {
       it.each(PAPEIS)('%s', async (papel) => {
         const sessao = caso.sessaoPropria ? await t.sessaoDe(papel) : sessoes[papel]
         const req = await caso.montar(sessao, papel)
-        const res = await t.requisitar(req.caminho, {
-          metodo: req.metodo,
-          cookie: sessao.cookie,
-          corpo: req.corpo,
-        })
+        const res = req.arquivo
+          ? await t.enviarArquivo(req.caminho, sessao.cookie, req.arquivo)
+          : await t.requisitar(req.caminho, {
+              metodo: req.metodo,
+              cookie: sessao.cookie,
+              corpo: req.corpo,
+            })
         const esperado = caso.esperado[papel]
         expect(
           res.status,

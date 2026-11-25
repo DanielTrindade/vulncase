@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest'
 import { STATUS_ACHADO, type StatusAchado } from '@vulncase/compartilhado'
 import {
   atribuirResponsavel,
+  podeColaborar,
+  podeRemoverEvidencia,
   diferencasDeCampos,
   estaVencido,
   garantirNaoEncerrado,
@@ -199,5 +201,26 @@ describe('erros de domínio', () => {
     expect(erro.titulo).toBeTruthy()
     expect(erro.message).toBeTruthy()
     expect(erro.name).toBe(erro.constructor.name)
+  })
+})
+
+describe('colaboração: comentar e anexar evidência', () => {
+  const resp = { id: 'u-dev', nome: 'Dev' }
+  it.each(STATUS_ACHADO)('status %s', (status) => {
+    const a = achado(status, resp)
+    const aberto = !ENCERRAMENTO.includes(status)
+    expect(podeColaborar(a, analista)).toBe(aberto)
+    expect(podeColaborar(a, dev)).toBe(aberto)
+    expect(podeColaborar(a, { id: 'u-outro', papel: 'Desenvolvedor' })).toBe(false)
+  })
+
+  it('remoção: gestores ou o autor, em achado não encerrado', () => {
+    const a = achado('Aberto', resp)
+    expect(podeRemoverEvidencia(a, { enviadaPorId: 'x' }, analista)).toBe(true)
+    expect(podeRemoverEvidencia(a, { enviadaPorId: 'u-dev' }, dev)).toBe(true)
+    expect(podeRemoverEvidencia(a, { enviadaPorId: 'x' }, dev)).toBe(false)
+    expect(
+      podeRemoverEvidencia(achado('Corrigido', resp), { enviadaPorId: 'u-dev' }, analista),
+    ).toBe(false)
   })
 })

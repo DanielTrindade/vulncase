@@ -1,4 +1,5 @@
 import { criarApp } from '../../src/app.js'
+import { Armazenamento } from '../../src/infra/armazenamento.js'
 import { carregarConfig } from '../../src/config.js'
 import type { BancoDados } from '../../src/db/cliente.js'
 import { criarLogMemoria } from './log-memoria.js'
@@ -12,6 +13,11 @@ export function criarAppSemBanco() {
     DATABASE_URL: 'postgres://u:p@localhost:5432/db',
     ORIGEM_PERMITIDA: ORIGEM_TESTE,
   })
-  const app = criarApp({ db: {} as BancoDados, config, log })
+  const app = criarApp({
+    db: {} as BancoDados,
+    config,
+    log,
+    armazenamento: new Armazenamento('/nao-usado'),
+  })
   return { app, linhas }
 }

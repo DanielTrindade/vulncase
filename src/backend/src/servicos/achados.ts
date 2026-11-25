@@ -75,7 +75,7 @@ export function formatarAchado(c: AchadoCarregado, usuario: UsuarioSessao, hoje 
   const a = c.achado
   const estado = { status: a.status, responsavel: c.responsavel, encerradoEm: a.encerradoEm }
   const acoes = c.projeto.arquivado
-    ? { editar: false, atribuirResponsavel: false, transicoes: [] }
+    ? { editar: false, atribuirResponsavel: false, anexarEvidencia: false, transicoes: [] }
     : acoesPermitidas(estado, usuario)
   return {
     id: a.id,
