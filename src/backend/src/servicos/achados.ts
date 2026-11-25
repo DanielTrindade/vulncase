@@ -1,13 +1,20 @@
 import { and, eq, sql } from 'drizzle-orm'
 import { alias } from 'drizzle-orm/pg-core'
-import type { EntradaCriarAchado, EntradaEditarAchado } from '@vulncase/compartilhado'
+import type {
+  EntradaAtribuirResponsavel,
+  EntradaCriarAchado,
+  EntradaEditarAchado,
+  EntradaTransicao,
+} from '@vulncase/compartilhado'
 import type { UsuarioSessao } from '../ambiente.js'
 import type { BancoDados } from '../db/cliente.js'
 import { achados, categoriasOwasp, eventosHistorico, projetos, usuarios } from '../db/schema.js'
 import {
   acoesPermitidas,
+  atribuirResponsavel,
   diferencasDeCampos,
   estaVencido,
+  transicionar,
   verificarEdicao,
   type EventoNovo,
 } from '../dominio/achado.js'
@@ -284,6 +291,136 @@ export async function editarAchado(
       autorId: autor.id,
       achadoId: id,
       campos: eventos.map((e) => e.campo),
+    })
+  })
+  return detalharAchado(db, id, autor)
+}
+
+/** Grava o novo estado com concorrência otimista; 0 linhas afetadas é conflito (Figura 7). */
+async function gravarEstado(
+  tx: Transacao,
+  id: string,
+  versaoLida: number,
+  estado: {
+    status: AchadoCarregado['achado']['status']
+    responsavelId: string | null
+    encerradoEm: Date | null
+  },
+  agora: Date,
+): Promise<void> {
+  const atualizados = await tx
+    .update(achados)
+    .set({ ...estado, atualizadoEm: agora, versao: sql`${achados.versao} + 1` })
+    .where(and(eq(achados.id, id), eq(achados.versao, versaoLida)))
+    .returning({ id: achados.id })
+  if (atualizados.length === 0) throw new VersaoDivergenteError()
+}
+
+/** Atribui, troca ou remove o responsável (RF15, RN03, UC06). */
+export async function alterarResponsavel(
+  db: BancoDados,
+  log: Log,
+  autor: UsuarioSessao,
+  id: string,
+  entrada: EntradaAtribuirResponsavel,
+): Promise<AchadoDto> {
+  const agora = new Date()
+  await db.transaction(async (tx) => {
+    const atual = await carregarAchado(tx, id)
+    if (atual.projeto.arquivado) throw new ConflitoError('O projeto do achado está arquivado.')
+    const novo = entrada.responsavelId
+      ? await buscarUsuarioParaAtribuicao(tx, entrada.responsavelId)
+      : null
+    const { achado: depois, eventos } = atribuirResponsavel(
+      {
+        status: atual.achado.status,
+        responsavel: atual.responsavel,
+        encerradoEm: atual.achado.encerradoEm,
+      },
+      novo,
+      autor,
+    )
+    if (atual.achado.versao !== entrada.versao) throw new VersaoDivergenteError()
+    if (eventos.length === 0) return
+    await gravarEstado(
+      tx,
+      id,
+      entrada.versao,
+      {
+        status: depois.status,
+        responsavelId: depois.responsavel?.id ?? null,
+        encerradoEm: depois.encerradoEm,
+      },
+      agora,
+    )
+    await inserirEventos(tx, id, autor.id, eventos, agora)
+    log.info({
+      evento: 'achado.responsavel_alterado',
+      autorId: autor.id,
+      achadoId: id,
+      responsavelId: depois.responsavel?.id ?? null,
+    })
+  })
+  return detalharAchado(db, id, autor)
+}
+
+async function buscarUsuarioParaAtribuicao(db: Executor, id: string) {
+  const [u] = await db
+    .select({ id: usuarios.id, nome: usuarios.nome, ativo: usuarios.ativo })
+    .from(usuarios)
+    .where(eq(usuarios.id, id))
+  if (!u) {
+    throw new ValidacaoError([{ campo: 'responsavelId', mensagem: 'Usuário inexistente.' }])
+  }
+  return u
+}
+
+/**
+ * Altera o status pela máquina de estados (RF16, RF17, Figura 7). As regras de papel,
+ * propriedade e justificativa ficam em dominio/achado.ts; aqui só se carrega, chama
+ * o domínio e grava estado e evento na mesma transação.
+ */
+export async function executarTransicao(
+  db: BancoDados,
+  log: Log,
+  autor: UsuarioSessao,
+  id: string,
+  entrada: EntradaTransicao,
+): Promise<AchadoDto> {
+  const agora = new Date()
+  await db.transaction(async (tx) => {
+    const atual = await carregarAchado(tx, id)
+    if (atual.projeto.arquivado) throw new ConflitoError('O projeto do achado está arquivado.')
+    const { achado: depois, eventos } = transicionar(
+      {
+        status: atual.achado.status,
+        responsavel: atual.responsavel,
+        encerradoEm: atual.achado.encerradoEm,
+      },
+      entrada.destino,
+      autor,
+      entrada.justificativa,
+      agora,
+    )
+    if (atual.achado.versao !== entrada.versao) throw new VersaoDivergenteError()
+    await gravarEstado(
+      tx,
+      id,
+      entrada.versao,
+      {
+        status: depois.status,
+        responsavelId: depois.responsavel?.id ?? null,
+        encerradoEm: depois.encerradoEm,
+      },
+      agora,
+    )
+    await inserirEventos(tx, id, autor.id, eventos, agora)
+    log.info({
+      evento: 'achado.transicao',
+      autorId: autor.id,
+      achadoId: id,
+      de: atual.achado.status,
+      para: entrada.destino,
     })
   })
   return detalharAchado(db, id, autor)

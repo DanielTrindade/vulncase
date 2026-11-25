@@ -301,7 +301,7 @@ describe('registro, edição e detalhe de achado', () => {
       const atual = (await (
         await t.requisitar(`/api/achados/${a.id}`, { cookie: analista.cookie })
       ).json()) as AchadoResposta
-      if (atual.status !== 'FalsoPositivo') return // transições chegam na issue seguinte
+      expect(atual.status).toBe('FalsoPositivo')
       const res = await t.requisitar(`/api/achados/${a.id}`, {
         metodo: 'PUT',
         cookie: analista.cookie,
