@@ -12,6 +12,7 @@ import { ConflitoError, RecursoNaoEncontradoError, ValidacaoError } from '../dom
 import type { Log } from '../infra/log.js'
 import { gerarHash, verificar } from '../infra/senha.js'
 import { revogarSessoes } from './autenticacao.js'
+import { ehViolacaoUnicidade } from './erros-banco.js'
 
 const colunasPublicas = {
   id: usuarios.id,
@@ -33,11 +34,6 @@ export async function listarResponsaveis(db: BancoDados) {
     .from(usuarios)
     .where(eq(usuarios.ativo, true))
     .orderBy(asc(usuarios.nome))
-}
-
-function ehViolacaoUnicidade(err: unknown): boolean {
-  const causa = (err as { cause?: { code?: string } })?.cause ?? err
-  return (causa as { code?: string })?.code === '23505'
 }
 
 export async function criarUsuario(

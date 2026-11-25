@@ -5,6 +5,7 @@ import { registrarRequisicao } from './middlewares/requisicao.js'
 import { cabecalhosSeguranca, limitarCorpo, verificarOrigem } from './middlewares/seguranca.js'
 import { carregarSessao, exigirSessao } from './middlewares/sessao.js'
 import { rotasAuth } from './rotas/auth.js'
+import { rotasProjetos } from './rotas/projetos.js'
 import { rotasUsuarios } from './rotas/usuarios.js'
 
 /**
@@ -23,6 +24,7 @@ export function criarApp(deps: Dependencias) {
     .get('/api/health', (c) => c.json({ status: 'ok' as const }))
     .route('/api/auth', rotasAuth)
     .route('/api/usuarios', rotasUsuarios)
+    .route('/api/projetos', rotasProjetos)
 
   app.onError(tratarErro)
   app.notFound(naoEncontrado)
