@@ -1,0 +1,22 @@
+# Proxy reverso: front-end e API na mesma origem, com HTTPS local (CA interna do Caddy).
+{
+	admin off
+}
+
+localhost {
+	# Limite de corpo de 5 MB para toda requisição (RNF14, A14).
+	request_body {
+		max_size 5MB
+	}
+
+	# Não anuncia o servidor.
+	header -Server
+
+	handle /api/* {
+		reverse_proxy api:3000
+	}
+
+	handle {
+		reverse_proxy web:8080
+	}
+}
